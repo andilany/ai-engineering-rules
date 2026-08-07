@@ -1,0 +1,4 @@
+name = "ml-gpu-service"
+description = "FastAPI-oriented ML/GPU service guidance with expensive-compute safeguards."
+extends = ["fastapi-backend"]
+modules = ["ml.service-boundaries", "ml.gpu-cuda", "ml.vram", "ml.batching", "ml.parallel-processing", "ml.pipelines", "ml.llm-integrations", "architecture.event-driven", "architecture.orchestration", "architecture.retry-backoff", "architecture.deduplication"]

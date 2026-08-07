@@ -1,0 +1,4 @@
+name = "fastapi-backend"
+description = "Python backend with FastAPI/Pydantic/SQLAlchemy/Alembic defaults."
+extends = ["python-backend"]
+modules = ["backend.fastapi", "backend.pydantic", "backend.uvicorn-asgi", "data.sqlalchemy", "data.alembic", "messaging.rabbitmq", "messaging.aio-pika", "messaging.aiormq"]

@@ -1,0 +1,3 @@
+services:
+  broker:
+    image: rabbitmq:4-management

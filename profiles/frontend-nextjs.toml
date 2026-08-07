@@ -1,0 +1,4 @@
+name = "frontend-nextjs"
+description = "Greenfield TypeScript/React/Next.js frontend preferences without migration mandates."
+extends = []
+modules = ["core.agent-behavior", "core.scope-discipline", "core.workflow", "core.verification", "core.external-actions", "core.documentation", "frontend.typescript", "frontend.react", "frontend.nextjs", "frontend.tailwind", "frontend.shadcn-radix", "frontend.tanstack-query", "frontend.zustand", "frontend.forms-zod", "frontend.api-client", "security.baseline", "security.secrets", "security.dependencies", "quality.anti-cheating"]

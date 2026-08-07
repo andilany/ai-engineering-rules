@@ -1,0 +1,4 @@
+name = "django-backend"
+description = "Python backend with Django, django-modern-rest, msgspec, Django ORM and migrations."
+extends = ["python-backend"]
+modules = ["backend.django", "backend.django-modern-rest", "backend.msgspec", "data.django-orm", "data.django-migrations"]

@@ -1,0 +1,4 @@
+name = "fullstack-python"
+description = "FastAPI Python backend plus Next.js frontend defaults; deployment architecture remains a user decision."
+extends = ["fastapi-backend", "frontend-nextjs"]
+modules = []

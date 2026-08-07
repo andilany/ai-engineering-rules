@@ -1,0 +1,12 @@
+name = "python-backend"
+description = "Core rules for Python backend projects without forcing a web framework or distributed architecture."
+extends = []
+modules = [
+  "core.agent-behavior", "core.scope-discipline", "core.workflow", "core.verification",
+  "core.external-actions", "core.documentation", "languages.python", "backend.async-python",
+  "backend.api-design", "architecture.architecture-decisions", "architecture.idempotency",
+  "data.postgresql", "data.redis", "security.baseline", "security.auth", "security.keycloak",
+  "security.oauth2-oidc", "security.jwt", "security.rbac", "security.secrets",
+  "security.dependencies", "quality.testing", "quality.pytest", "quality.typing", "quality.ruff",
+  "quality.bandit", "quality.anti-cheating", "infrastructure.docker"
+]
