@@ -191,19 +191,16 @@ Git-коммиты остаются ответственностью польз�
 
 ## Релизы
 
-История изменений ведётся в [`CHANGELOG.md`](CHANGELOG.md), подробные release notes — в [`docs/releases/`](docs/releases/). Полная процедура описана в [`docs/releasing.md`](docs/releasing.md).
+История изменений и текст GitHub Release ведутся в [`CHANGELOG.md`](CHANGELOG.md). Полная процедура описана в [`docs/releasing.md`](docs/releasing.md).
 
 Для **каждого** релиза обязательны:
 
 1. версия в `pyproject.toml`;
-2. запись в `CHANGELOG.md`;
-3. `docs/releases/vX.Y.Z.md`;
-4. тег `vX.Y.Z` из проверенного `main`;
-5. GitHub Release для этого тега.
+2. заполненная секция `[X.Y.Z]` в `CHANGELOG.md`;
+3. тег `vX.Y.Z` из проверенного `main`;
+4. GitHub Release для этого тега.
 
-После push тега workflow `.github/workflows/release.yml` повторно проверяет metadata, запускает тесты и сборку, затем создаёт GitHub Release или обновляет уже существующий Release и прикладывает wheel/sdist.
-
-Текущая цель релиза: [`v0.3.0`](docs/releases/v0.3.0.md).
+После push тега workflow `.github/workflows/release.yml` повторно проверяет metadata, извлекает секцию версии из `CHANGELOG.md`, запускает тесты и сборку, затем создаёт GitHub Release или обновляет уже существующий Release и прикладывает wheel/sdist.
 
 ## Лицензия
 

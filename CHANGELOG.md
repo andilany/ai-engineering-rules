@@ -6,12 +6,11 @@
 
 ## [0.3.0] — 2026-08-08
 
-Release notes: [`docs/releases/v0.3.0.md`](docs/releases/v0.3.0.md)
-
 - Changed the project license to MIT for the public repository.
 - Added enforced release metadata validation via `scripts/check_release.py`.
 - Added tag-driven GitHub Release automation with tests, package build, wheel smoke test, and release artifact upload.
-- Added the documented release process in `docs/releasing.md`; every release requires changelog and version-specific release notes.
+- Added the documented release process in `docs/releasing.md`; `CHANGELOG.md` is the single source for GitHub Release notes.
+- Removed internal planning artifacts and duplicate version-specific release-note files from the public tree.
 - Added native modular adapters for Cursor, Claude Code, and GitHub Copilot.
 - Added `copilot` as a repeatable `--ide` target for project init/sync and global bootstrap.
 - Cursor now renders thematic `.cursor/rules/airules-*.mdc` files and migrates the old owned `engineering.mdc` adapter.
