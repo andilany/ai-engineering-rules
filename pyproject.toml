@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-engineering-rules"
+version = "0.3.0"
+description = "Reusable engineering rules for AI coding agents"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+dependencies = [
+  "tomlkit",
+  "typer",
+]
+
+[project.scripts]
+airules = "ai_rules.cli:app"
+
+[dependency-groups]
+dev = [
+  "bandit",
+  "mypy",
+  "pytest",
+  "pytest-asyncio",
+  "ruff",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_rules"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"rules" = "ai_rules/resources/rules"
+"profiles" = "ai_rules/resources/profiles"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "S", "RUF"]
+ignore = ["S101"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+packages = ["ai_rules"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
