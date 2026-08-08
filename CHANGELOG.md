@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — 2026-08-08
+
+- Fixed `airules doctor` to validate only adapters selected by persisted `manifest.ides`.
+- Cursor-only projects no longer report Codex, Claude, or Gemini adapters as outdated.
+- Preserved legacy behavior: manifests without `ides` still validate all supported adapters.
+- Added regression coverage for selective and legacy doctor behavior.
+
 ## 0.2.2 — 2026-08-08
 
 - Added whole-catalog integrity validation across profiles, required core rules, and every manifest feature mapping.
