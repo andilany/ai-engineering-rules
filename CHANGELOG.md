@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 — 2026-08-08
+
+- Fixed the published `dev` rule catalog by restoring the missing `rules/infrastructure/` category.
+- Restored `infrastructure.docker`, required by the `python-backend` profile.
+- No project files or adapter-selection behavior changed.
+
 ## 0.2.0 — 2026-08-08
 
 - Added repeatable `--ide` selection for `init`, `sync`, and `bootstrap`.
