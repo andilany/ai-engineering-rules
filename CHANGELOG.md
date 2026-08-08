@@ -13,6 +13,7 @@
 - Added `airules uninstall` with an explicit deletion/modification preview and required `[y/N]` confirmation.
 - Added `airules uninstall --purge` for explicitly deleting the user-owned `.ai-rules/project.md` file.
 - Added `--yes`, `--dry-run`, and `--interactive/--no-interactive` lifecycle controls while preserving existing `--profile` and `--ide` automation workflows.
+- Restored the aggregate `SyncResult.changed` compatibility property used by lifecycle and end-to-end callers.
 
 ## [0.3.0] — 2026-08-08
 
