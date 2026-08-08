@@ -5,9 +5,9 @@ build-backend = "hatchling.build"
 [project]
 name = "ai-engineering-rules"
 version = "0.3.0"
-description = "Private reusable engineering rules for AI coding agents"
+description = "Reusable engineering rules for AI coding agents"
 readme = "README.md"
-license = "LicenseRef-Proprietary"
+license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [

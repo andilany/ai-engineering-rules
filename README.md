@@ -2,7 +2,7 @@
 
 **Русский** | [English](README_EN.md)
 
-Приватный versioned rule-pack для AI coding agents. Репозиторий хранит единый набор инженерных правил и небольшой CLI `airules`, который подключает их к проектам без копирования всего репозитория.
+Версионируемый rule-pack инженерных правил для AI coding agents. Репозиторий хранит единый canonical набор правил и CLI `airules`, который подключает релевантные инструкции к проектам.
 
 Поддерживаемые агенты:
 
@@ -20,7 +20,7 @@
 
 ## Почему не submodule и не копирование
 
-Canonical rules живут в одном приватном репозитории. В конкретном проекте остаются только:
+Canonical rules живут в этом репозитории. В конкретном проекте остаются только:
 
 ```text
 .ai-rules.toml
@@ -42,13 +42,13 @@ GEMINI.md
 Стабильная версия после релиза в `main`:
 
 ```bash
-uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@main"
+uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@main"
 ```
 
 Development-версия из `dev`:
 
 ```bash
-uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@dev"
+uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@dev"
 ```
 
 Обновление установленного CLI:
@@ -191,17 +191,20 @@ Git-коммиты остаются ответственностью польз�
 
 ## Релизы
 
-История изменений ведётся в [`CHANGELOG.md`](CHANGELOG.md), подробные release notes — в [`docs/releases/`](docs/releases/).
+История изменений ведётся в [`CHANGELOG.md`](CHANGELOG.md), подробные release notes — в [`docs/releases/`](docs/releases/). Полная процедура описана в [`docs/releasing.md`](docs/releasing.md).
 
-Текущий release candidate: [`v0.3.0`](docs/releases/v0.3.0.md).
+Для **каждого** релиза обязательны:
 
-Релизный процесс:
+1. версия в `pyproject.toml`;
+2. запись в `CHANGELOG.md`;
+3. `docs/releases/vX.Y.Z.md`;
+4. тег `vX.Y.Z` из проверенного `main`;
+5. GitHub Release для этого тега.
 
-1. разработка и проверка выполняются в `dev`;
-2. release candidate сливается в `main`;
-3. из проверенного commit в `main` создаётся тег `vX.Y.Z`;
-4. GitHub Release публикуется из этого тега с соответствующими release notes.
+После push тега workflow `.github/workflows/release.yml` повторно проверяет metadata, запускает тесты и сборку, затем создаёт GitHub Release или обновляет уже существующий Release и прикладывает wheel/sdist.
+
+Текущая цель релиза: [`v0.3.0`](docs/releases/v0.3.0.md).
 
 ## Лицензия
 
-Репозиторий пока остаётся proprietary и распространяется по условиям [`LICENSE`](LICENSE). Доступ к приватному репозиторию не даёт права на распространение. Если проект станет публичным, владелец сможет отдельно выбрать open-source лицензию.
+Проект распространяется по [MIT License](LICENSE). Разрешено использовать, изменять, распространять и включать проект в коммерческие продукты при сохранении copyright notice и текста лицензии.

@@ -1,9 +1,17 @@
 # Changelog
 
-## 0.3.0 — 2026-08-08
+## [Unreleased]
+
+- No unreleased changes yet.
+
+## [0.3.0] — 2026-08-08
 
 Release notes: [`docs/releases/v0.3.0.md`](docs/releases/v0.3.0.md)
 
+- Changed the project license to MIT for the public repository.
+- Added enforced release metadata validation via `scripts/check_release.py`.
+- Added tag-driven GitHub Release automation with tests, package build, wheel smoke test, and release artifact upload.
+- Added the documented release process in `docs/releasing.md`; every release requires changelog and version-specific release notes.
 - Added native modular adapters for Cursor, Claude Code, and GitHub Copilot.
 - Added `copilot` as a repeatable `--ide` target for project init/sync and global bootstrap.
 - Cursor now renders thematic `.cursor/rules/airules-*.mdc` files and migrates the old owned `engineering.mdc` adapter.
@@ -45,6 +53,6 @@ Release notes: [`docs/releases/v0.3.0.md`](docs/releases/v0.3.0.md)
 
 - Added modular canonical engineering rules and profile system.
 - Added `airules bootstrap`, `init`, `sync`, `add`, `detect`, `explain`, and `doctor`.
-- Added initial adapters for Codex, Claude Code, Gemini CLI, and Cursor.
+- Added native adapters for Codex, Claude Code, Gemini CLI, and Cursor.
 - Added safe managed blocks, atomic scoped writes, dry-run mode, stack detection, and project-owned overrides.
 - Added Python/FastAPI/Django, frontend, ML/GPU, security, messaging, data, testing, and infrastructure rules.

@@ -2,7 +2,7 @@
 
 [Русский](README.md) | **English**
 
-A private, versioned engineering rule pack for AI coding agents. The repository keeps one canonical set of engineering rules and provides the `airules` CLI to attach only the relevant guidance to a project.
+A versioned engineering rule pack for AI coding agents. The repository keeps one canonical rule set and provides the `airules` CLI to attach only the relevant guidance to a project.
 
 Supported agents:
 
@@ -42,13 +42,13 @@ GEMINI.md
 Stable channel after a release is merged to `main`:
 
 ```bash
-uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@main"
+uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@main"
 ```
 
 Development channel:
 
 ```bash
-uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@dev"
+uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@dev"
 ```
 
 Upgrade the currently installed tool:
@@ -171,20 +171,23 @@ The `airules` CLI itself must not:
 
 ## Releases
 
-Release history is tracked in [CHANGELOG.md](CHANGELOG.md). Detailed release notes are stored under [`docs/releases/`](docs/releases/).
+Release history is tracked in [CHANGELOG.md](CHANGELOG.md). Detailed release notes are stored under [`docs/releases/`](docs/releases/), and the full procedure is documented in [`docs/releasing.md`](docs/releasing.md).
 
-Current release candidate: [v0.3.0](docs/releases/v0.3.0.md).
+Every release requires:
 
-Release policy:
+1. a matching version in `pyproject.toml`;
+2. a `CHANGELOG.md` entry;
+3. `docs/releases/vX.Y.Z.md`;
+4. a `vX.Y.Z` tag from the verified `main` commit;
+5. a GitHub Release for that tag.
 
-1. development is validated on `dev`;
-2. the release candidate is merged to `main`;
-3. the matching `vX.Y.Z` tag is created from `main`;
-4. a GitHub Release is published from that tag using the matching release notes.
+After a tag is pushed, `.github/workflows/release.yml` validates release metadata, runs tests and the package build, then creates or updates the GitHub Release and uploads the wheel/sdist artifacts.
+
+Current release target: [v0.3.0](docs/releases/v0.3.0.md).
 
 ## License
 
-This repository is currently proprietary and distributed under the terms in [LICENSE](LICENSE). Access to the private repository does not grant redistribution rights. A public/open-source license can be selected later by the repository owner.
+This project is released under the [MIT License](LICENSE). You may use, modify, distribute, and include it in commercial products as long as the copyright notice and license text are preserved.
 
 ## Documentation
 
