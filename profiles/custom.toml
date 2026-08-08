@@ -1,0 +1,17 @@
+name = "custom"
+description = "Minimal technology-neutral base for interactive airules configuration."
+extends = []
+modules = [
+  "core.agent-behavior",
+  "core.scope-discipline",
+  "core.workflow",
+  "core.verification",
+  "core.external-actions",
+  "core.documentation",
+  "architecture.architecture-decisions",
+  "security.baseline",
+  "security.secrets",
+  "security.dependencies",
+  "quality.testing",
+  "quality.anti-cheating",
+]

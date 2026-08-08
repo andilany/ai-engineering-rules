@@ -98,7 +98,19 @@ airules init
 
 `detect` только читает безопасные конфигурационные признаки (`pyproject.toml`, `package.json`, Docker/Compose markers и т. п.). Он не импортирует код проекта, не читает значения `.env` и не запускает приложение.
 
-Если профиль определён неоднозначно, `init` откажется угадывать и попросит указать его явно:
+### Интерактивная настройка
+
+При обычном запуске `airules init` в интерактивном терминале открывается wizard. Он показывает обнаруженный стек и позволяет выбрать только нужные группы правил: backend, frontend, ML/AI/GPU, базы данных, messaging, infrastructure и authentication/security. После этого отдельно выбираются AI-агенты, для которых нужно создать adapters.
+
+Wizard использует минимальный профиль `custom`: например, выбор FastAPI сам по себе больше не означает автоматическое подключение PostgreSQL, Redis, Docker или Keycloak. Эти группы добавляются только если пользователь выбрал их отдельно или использует один из готовых legacy-профилей.
+
+Для скриптов и CI остаётся полностью non-interactive режим:
+
+```bash
+airules init --no-interactive --profile fastapi-backend --ide cursor
+```
+
+Если профиль определён неоднозначно в non-interactive режиме, `init` откажется угадывать и попросит указать его явно:
 
 ```bash
 airules init --profile fastapi-backend
@@ -122,6 +134,7 @@ airules sync --ide claude
 
 Начальные профили:
 
+- `custom` — минимальная база для интерактивного wizard;
 - `python-backend`
 - `fastapi-backend`
 - `django-backend`
@@ -142,8 +155,22 @@ airules detect
 airules explain
 airules doctor
 airules sync
+airules reconfigure
+airules uninstall
 airules add ml-gpu-service
 ```
+
+### Перенастройка и удаление
+
+`airules reconfigure` сначала показывает, какие managed-файлы и текущие настройки будут удалены или изменены, и требует явное подтверждение. Затем открывается тот же setup wizard. До финального `Apply?` файловая система не изменяется. `.ai-rules/project.md` сохраняется.
+
+`airules uninstall` также всегда показывает план удаления/изменения и требует подтверждение `[y/N]`. По умолчанию пользовательский `.ai-rules/project.md` сохраняется. Полное удаление, включая этот файл, выполняется только явно:
+
+```bash
+airules uninstall --purge
+```
+
+Для автоматизации доступны `--yes` и `--dry-run`; предупреждение и preview при этом всё равно выводятся.
 
 `airules explain` показывает активные правила и их provenance. `doctor` сравнивает manifest, generated snapshot и adapters без записи. `sync` перечитывает `.ai-rules.toml` и обновляет только airules-managed контент.
 
@@ -205,3 +232,4 @@ Git-коммиты остаются ответственностью польз�
 ## Лицензия
 
 Проект распространяется по [MIT License](LICENSE). Разрешено использовать, изменять, распространять и включать проект в коммерческие продукты при сохранении copyright notice и текста лицензии.
+

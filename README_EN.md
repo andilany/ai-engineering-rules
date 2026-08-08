@@ -90,7 +90,19 @@ airules init
 
 Detection reads bounded configuration signals such as `pyproject.toml`, `package.json`, and Docker/Compose markers. It does not import application code, read `.env` values, or run the application.
 
-If the profile cannot be selected safely, choose it explicitly:
+### Interactive setup
+
+Running `airules init` in an interactive terminal opens a wizard. It shows the detected stack and lets the user select only the rule families the project needs: backend, frontend, ML/AI/GPU, databases, messaging, infrastructure, and authentication/security. Agent adapters are selected separately.
+
+The wizard uses the minimal `custom` profile. Selecting FastAPI, for example, no longer implicitly enables PostgreSQL, Redis, Docker, or Keycloak rules. Those families are added only when selected explicitly or when a prebuilt legacy profile is used.
+
+Scripts and CI can keep using a fully non-interactive flow:
+
+```bash
+airules init --no-interactive --profile fastapi-backend --ide cursor
+```
+
+If the profile cannot be selected safely in non-interactive mode, choose it explicitly:
 
 ```bash
 airules init --profile fastapi-backend
@@ -114,6 +126,7 @@ Unselected adapter files are not modified. For a selected adapter, stale files a
 
 Initial profiles:
 
+- `custom` — minimal base for the interactive wizard;
 - `python-backend`
 - `fastapi-backend`
 - `django-backend`
@@ -134,8 +147,22 @@ airules detect
 airules explain
 airules doctor
 airules sync
+airules reconfigure
+airules uninstall
 airules add ml-gpu-service
 ```
+
+### Reconfigure and uninstall
+
+`airules reconfigure` first previews the managed files and current configuration that will be removed or changed and requires explicit confirmation. It then opens the setup wizard. The filesystem is not changed until the final `Apply?` confirmation. `.ai-rules/project.md` is preserved.
+
+`airules uninstall` also shows the deletion/modification plan and requires `[y/N]` confirmation. The user-owned `.ai-rules/project.md` file is preserved by default. Delete it only with an explicit purge:
+
+```bash
+airules uninstall --purge
+```
+
+Automation can use `--yes` and `--dry-run`; the warning and preview are still printed.
 
 - `detect` reports stack signals and suggested profiles;
 - `explain` reports active rules and provenance;
@@ -180,7 +207,7 @@ Every release requires:
 3. a `vX.Y.Z` tag from the verified `main` commit;
 4. a GitHub Release for that tag.
 
-After a tag is pushed, `.github/workflows/release.yml` re-validates metadata, extracts the matching version section from `CHANGELOG.md`, runs tests and the package build, then creates or updates the GitHub Release and uploads wheel/sdist artifacts.
+After a tag is pushed, `.github/workflows/release.yml` validates release metadata, extracts the matching version section from `CHANGELOG.md`, runs tests and the package build, then creates or updates the GitHub Release and uploads the wheel/sdist artifacts.
 
 ## License
 
