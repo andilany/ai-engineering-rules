@@ -41,16 +41,26 @@ def version() -> None:
 @app.command("init")
 def init_command(
     profile: str | None = typer.Option(None, "--profile"),
+    ide: list[str] | None = typer.Option(
+        None, "--ide", help="IDE/agent adapter to manage; repeatable."
+    ),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     root = Path.cwd().resolve()
-    _run(lambda: init_project(root, profile=profile, dry_run=dry_run))
+    selected_ides = tuple(ide) if ide else None
+    _run(lambda: init_project(root, profile=profile, dry_run=dry_run, ides=selected_ides))
 
 
 @app.command()
-def sync(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
+def sync(
+    ide: list[str] | None = typer.Option(
+        None, "--ide", help="Temporary IDE/agent adapter override; repeatable."
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
     root = find_project_root(Path.cwd())
-    _run(lambda: sync_project(root, dry_run=dry_run))
+    selected_ides = tuple(ide) if ide else None
+    _run(lambda: sync_project(root, dry_run=dry_run, ides=selected_ides))
 
 
 @app.command("add")
@@ -89,16 +99,28 @@ def doctor() -> None:
 
 
 @app.command()
-def bootstrap(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
+def bootstrap(
+    ide: list[str] | None = typer.Option(
+        None, "--ide", help="IDE/agent bootstrap target; repeatable."
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
     home = Path.home()
     codex_raw = os.environ.get("CODEX_HOME")
     codex_home = Path(codex_raw).expanduser() if codex_raw else None
+    selected_ides = tuple(ide) if ide else None
     try:
-        result = bootstrap_global(home, codex_home=codex_home, dry_run=dry_run)
+        result = bootstrap_global(
+            home,
+            codex_home=codex_home,
+            dry_run=dry_run,
+            ides=selected_ides,
+        )
     except AirulesError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     for write in result.writes:
         state = "change" if write.changed else "unchanged"
         typer.echo(f"{state}: {write.path}")
-    typer.echo(result.cursor_note)
+    if result.cursor_note:
+        typer.echo(result.cursor_note)

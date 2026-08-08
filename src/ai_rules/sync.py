@@ -10,8 +10,15 @@ from ai_rules.adapters.gemini import render_gemini
 from ai_rules.detection import detect_project, suggest_extra_profiles, suggest_profile
 from ai_rules.errors import ConfigurationError
 from ai_rules.filesystem import WriteScope, apply_writes, plan_write
+from ai_rules.ides import SUPPORTED_IDES, normalize_ides
 from ai_rules.manifest import load_manifest, render_manifest
-from ai_rules.models import Detection, DetectionConfidence, ProjectManifest, SyncResult
+from ai_rules.models import (
+    Detection,
+    DetectionConfidence,
+    PlannedWrite,
+    ProjectManifest,
+    SyncResult,
+)
 from ai_rules.precedence import compose_effective_rules
 from ai_rules.profiles import load_profiles
 from ai_rules.project import ProjectPaths
@@ -74,8 +81,13 @@ def _scope(paths: ProjectPaths) -> WriteScope:
     )
 
 
-def _manifest_from_detections(profile: str, detections: tuple[Detection, ...]) -> ProjectManifest:
-    manifest = ProjectManifest(profile=profile, rules_version=__version__)
+def _manifest_from_detections(
+    profile: str,
+    detections: tuple[Detection, ...],
+    *,
+    ides: tuple[str, ...],
+) -> ProjectManifest:
+    manifest = ProjectManifest(profile=profile, rules_version=__version__, ides=list(ides))
     for detection in detections:
         if detection.confidence is DetectionConfidence.NOT_DETECTED:
             continue
@@ -94,7 +106,8 @@ def _render_all(
     manifest: ProjectManifest,
     *,
     create_project_file: bool,
-) -> tuple:
+    ides: tuple[str, ...],
+) -> tuple[PlannedWrite, ...]:
     profiles = load_profiles(validate_modules=True)
     rules = load_rules()
     effective = compose_effective_rules(manifest, profiles, rules)
@@ -103,17 +116,26 @@ def _render_all(
     writes = [
         plan_write(paths.manifest, render_manifest(manifest, _read_text(paths.manifest))),
         plan_write(paths.generated, generated),
-        plan_write(paths.codex, render_codex(_read_text(paths.codex))),
-        plan_write(paths.claude, render_claude(_read_text(paths.claude))),
-        plan_write(paths.gemini, render_gemini(_read_text(paths.gemini))),
-        plan_write(paths.cursor, render_cursor(_read_text(paths.cursor))),
     ]
+    if "codex" in ides:
+        writes.append(plan_write(paths.codex, render_codex(_read_text(paths.codex))))
+    if "claude" in ides:
+        writes.append(plan_write(paths.claude, render_claude(_read_text(paths.claude))))
+    if "gemini" in ides:
+        writes.append(plan_write(paths.gemini, render_gemini(_read_text(paths.gemini))))
+    if "cursor" in ides:
+        writes.append(plan_write(paths.cursor, render_cursor(_read_text(paths.cursor))))
     if create_project_file and not paths.project_rules.exists():
         writes.append(plan_write(paths.project_rules, _PROJECT_TEMPLATE))
     return tuple(writes)
 
 
-def init_project(root: Path, profile: str | None, dry_run: bool) -> SyncResult:
+def init_project(
+    root: Path,
+    profile: str | None,
+    dry_run: bool,
+    ides: tuple[str, ...] | None = None,
+) -> SyncResult:
     root = root.resolve()
     paths = ProjectPaths(root)
     detections = detect_project(root)
@@ -123,9 +145,10 @@ def init_project(root: Path, profile: str | None, dry_run: bool) -> SyncResult:
     profiles = load_profiles(validate_modules=True)
     if selected not in profiles:
         raise ConfigurationError(f"Unknown profile: {selected}")
-    manifest = _manifest_from_detections(selected, detections)
+    selected_ides = normalize_ides(ides, default_all=True)
+    manifest = _manifest_from_detections(selected, detections, ides=selected_ides)
     # Explicit profile remains primary; ML is an extra only when detected.
-    writes = _render_all(paths, manifest, create_project_file=True)
+    writes = _render_all(paths, manifest, create_project_file=True, ides=selected_ides)
     applied = apply_writes(writes, dry_run=dry_run, scope=_scope(paths))
     return SyncResult(
         writes=applied,
@@ -134,14 +157,24 @@ def init_project(root: Path, profile: str | None, dry_run: bool) -> SyncResult:
     )
 
 
-def sync_project(root: Path, dry_run: bool) -> SyncResult:
+def sync_project(
+    root: Path,
+    dry_run: bool,
+    ides: tuple[str, ...] | None = None,
+) -> SyncResult:
     root = root.resolve()
     paths = ProjectPaths(root)
     if not paths.manifest.exists():
         raise ConfigurationError("Project is not initialized; run `airules init`")
     manifest = load_manifest(paths.manifest)
     manifest.rules_version = __version__
-    writes = _render_all(paths, manifest, create_project_file=False)
+    if ides is not None:
+        selected_ides = normalize_ides(ides, default_all=False)
+    elif manifest.ides is None:
+        selected_ides = SUPPORTED_IDES
+    else:
+        selected_ides = normalize_ides(manifest.ides, default_all=False)
+    writes = _render_all(paths, manifest, create_project_file=False, ides=selected_ides)
     applied = apply_writes(writes, dry_run=dry_run, scope=_scope(paths))
     return SyncResult(
         writes=applied,
@@ -164,7 +197,12 @@ def add_selection(root: Path, selection: str, dry_run: bool) -> SyncResult:
     else:
         raise ConfigurationError(f"Unknown profile or rule: {selection}")
     manifest.rules_version = __version__
-    writes = _render_all(paths, manifest, create_project_file=False)
+    selected_ides = (
+        SUPPORTED_IDES
+        if manifest.ides is None
+        else normalize_ides(manifest.ides, default_all=False)
+    )
+    writes = _render_all(paths, manifest, create_project_file=False, ides=selected_ides)
     applied = apply_writes(writes, dry_run=dry_run, scope=_scope(paths))
     return SyncResult(
         writes=applied,

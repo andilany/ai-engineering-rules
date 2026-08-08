@@ -7,9 +7,19 @@ import tomlkit
 from tomlkit import TOMLDocument
 
 from ai_rules.errors import ConfigurationError
+from ai_rules.ides import normalize_ides
 from ai_rules.models import ProjectManifest
 
-SECTIONS = ("language", "backend", "data", "messaging", "security", "frontend", "ml", "infrastructure")
+SECTIONS = (
+    "language",
+    "backend",
+    "data",
+    "messaging",
+    "security",
+    "frontend",
+    "ml",
+    "infrastructure",
+)
 LIST_FIELDS = ("extra_profiles", "include_modules", "exclude_modules")
 
 
@@ -39,10 +49,18 @@ def load_manifest(path: Path) -> ProjectManifest:
     if version != 1:
         raise ConfigurationError(f"Unsupported manifest version: {version}")
 
+    raw_ides = data.get("ides") if "ides" in data else None
+    ides = None
+    if raw_ides is not None:
+        if not isinstance(raw_ides, list):
+            raise ConfigurationError("Manifest `ides` must be an array")
+        ides = list(normalize_ides((str(item) for item in raw_ides), default_all=False))
+
     return ProjectManifest(
         version=version,
         profile=str(data.get("profile", "python-backend")),
         rules_version=str(data.get("rules_version", "")),
+        ides=ides,
         language=_as_bool_dict(data.get("language", {})),
         backend=_as_bool_dict(data.get("backend", {})),
         data=_as_bool_dict(data.get("data", {})),
@@ -73,6 +91,8 @@ def render_manifest(manifest: ProjectManifest, existing: str | None = None) -> s
     document["version"] = manifest.version
     document["profile"] = manifest.profile
     document["rules_version"] = manifest.rules_version
+    if manifest.ides is not None:
+        document["ides"] = list(normalize_ides(manifest.ides, default_all=False))
 
     for field in LIST_FIELDS:
         values = getattr(manifest, field)

@@ -60,6 +60,7 @@ class ProjectManifest:
     version: int = 1
     profile: str = "python-backend"
     rules_version: str = ""
+    ides: list[str] | None = None
     language: dict[str, bool] = field(default_factory=dict)
     backend: dict[str, bool] = field(default_factory=dict)
     data: dict[str, bool] = field(default_factory=dict)

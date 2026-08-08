@@ -36,7 +36,7 @@ GEMINI.md
 Из приватного GitHub-репозитория по SSH:
 
 ```bash
-uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git"
+uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@dev"
 ```
 
 Обновление установленного CLI:
@@ -53,7 +53,14 @@ uv tool upgrade ai-engineering-rules
 airules bootstrap
 ```
 
-Команда добавляет managed block только в:
+Можно ограничить bootstrap конкретными агентами/IDE:
+
+```bash
+airules bootstrap --ide codex
+airules bootstrap --ide claude --ide gemini
+```
+
+Без `--ide` сохраняется прежнее поведение — подготавливаются все поддерживаемые targets. Команда добавляет managed block только в:
 
 - `$CODEX_HOME/AGENTS.md` или `~/.codex/AGENTS.md`;
 - `~/.claude/CLAUDE.md`;
@@ -83,6 +90,21 @@ airules init
 ```bash
 airules init --profile fastapi-backend
 ```
+
+Можно сразу выбрать, для каких агентов создавать project adapters:
+
+```bash
+airules init --profile fastapi-backend --ide codex
+airules init --ide codex --ide cursor
+```
+
+Выбор сохраняется в `.ai-rules.toml`. Последующий `airules sync` обновляет только выбранные adapters. Временный override не меняет manifest:
+
+```bash
+airules sync --ide claude
+```
+
+Невыбранные существующие adapter-файлы никогда не удаляются и не переписываются автоматически. Старые manifests без поля `ides` продолжают означать «все поддерживаемые IDE».
 
 Начальные профили:
 
