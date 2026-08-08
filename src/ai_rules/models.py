@@ -108,3 +108,9 @@ class SyncResult:
     detections: tuple[Detection, ...] = ()
     warnings: tuple[str, ...] = ()
     deletes: tuple[PlannedDelete, ...] = ()
+
+    @property
+    def changed(self) -> bool:
+        return any(write.changed for write in self.writes) or any(
+            delete.changed for delete in self.deletes
+        )

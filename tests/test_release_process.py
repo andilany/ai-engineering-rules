@@ -48,7 +48,7 @@ def test_release_check_accepts_current_version() -> None:
 def test_release_workflow_is_tag_driven_and_updates_existing_release() -> None:
     workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
 
-    assert 'tags:' in workflow
+    assert "tags:" in workflow
     assert '"v*.*.*"' in workflow
     assert "contents: write" in workflow
     assert "scripts/check_release.py" in workflow
@@ -84,6 +84,7 @@ def test_release_check_can_extract_github_release_body(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     body = notes.read_text(encoding="utf-8")
-    assert "Native" in body or "native" in body
+    assert body.strip()
+    assert body.lstrip().startswith("- ")
     assert f"## [{version}]" not in body
-    assert "## 0.2.3" not in body
+    assert "\n## " not in body
