@@ -4,13 +4,23 @@
 
 - No unreleased changes yet.
 
+## [0.3.1] — 2026-08-08
+
+- Added an interactive `airules init` wizard with detection-based defaults and selective rule families.
+- Added the minimal `custom` profile so interactive setup does not pull unrelated backend, data, infrastructure, or authentication rules.
+- Added `airules reconfigure` with a destructive-change preview, required confirmation before reset, a fresh setup wizard, and a final apply confirmation.
+- Reconfiguration now removes stale airules-owned adapters while preserving unrelated project files and `.ai-rules/project.md`.
+- Added `airules uninstall` with an explicit deletion/modification preview and required `[y/N]` confirmation.
+- Added `airules uninstall --purge` for explicitly deleting the user-owned `.ai-rules/project.md` file.
+- Added `--yes`, `--dry-run`, and `--interactive/--no-interactive` lifecycle controls while preserving existing `--profile` and `--ide` automation workflows.
+
 ## [0.3.0] — 2026-08-08
 
 - Changed the project license to MIT for the public repository.
 - Added enforced release metadata validation via `scripts/check_release.py`.
 - Added tag-driven GitHub Release automation with tests, package build, wheel smoke test, and release artifact upload.
 - Added the documented release process in `docs/releasing.md`; `CHANGELOG.md` is the single source for GitHub Release notes.
-- Removed internal planning artifacts and duplicate version-specific release-note files from the public tree.
+- Removed internal `docs/superpowers/` artifacts and duplicate `docs/releases/` files from the public tree.
 - Added native modular adapters for Cursor, Claude Code, and GitHub Copilot.
 - Added `copilot` as a repeatable `--ide` target for project init/sync and global bootstrap.
 - Cursor now renders thematic `.cursor/rules/airules-*.mdc` files and migrates the old owned `engineering.mdc` adapter.
