@@ -3,7 +3,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from ai_rules.errors import ConfigurationError
-from ai_rules.models import EffectiveRules, ProfileDefinition, ProjectManifest, RuleDocument, RuleSeverity
+from ai_rules.models import (
+    EffectiveRules,
+    ProfileDefinition,
+    ProjectManifest,
+    RuleDocument,
+    RuleSeverity,
+)
 from ai_rules.profiles import resolve_profile
 
 REQUIRED_CORE = ("core.agent-behavior", "core.external-actions")
@@ -44,6 +50,29 @@ _SEVERITY_ORDER = {
     RuleSeverity.CONDITIONAL: 3,
     RuleSeverity.OPTIONAL: 4,
 }
+
+
+def validate_catalog_integrity(
+    profiles: Mapping[str, ProfileDefinition],
+    rules: Mapping[str, RuleDocument],
+) -> None:
+    referenced: list[str] = list(REQUIRED_CORE)
+
+    for profile_name in profiles:
+        for module in resolve_profile(profile_name, profiles):
+            if module not in referenced:
+                referenced.append(module)
+
+    for mapped_modules in MANIFEST_MODULES.values():
+        for module in mapped_modules:
+            if module not in referenced:
+                referenced.append(module)
+
+    missing = [module for module in referenced if module not in rules]
+    if missing:
+        raise ConfigurationError(
+            "Canonical rule catalog is incomplete; missing modules: " + ", ".join(missing)
+        )
 
 
 def compose_effective_rules(

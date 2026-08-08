@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 — 2026-08-08
+
+- Added whole-catalog integrity validation across profiles, required core rules, and every manifest feature mapping.
+- Incomplete packaged rule catalogs now report all missing canonical modules in one error instead of failing one module at a time.
+- Added regression coverage for missing infrastructure mappings.
+- Release validation now includes an installed-package smoke with Docker Compose detection and Cursor-only initialization.
+
 ## 0.2.1 — 2026-08-08
 
 - Fixed the published `dev` rule catalog by restoring the missing `rules/infrastructure/` category.

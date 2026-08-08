@@ -19,7 +19,7 @@ from ai_rules.models import (
     ProjectManifest,
     SyncResult,
 )
-from ai_rules.precedence import compose_effective_rules
+from ai_rules.precedence import compose_effective_rules, validate_catalog_integrity
 from ai_rules.profiles import load_profiles
 from ai_rules.project import ProjectPaths
 from ai_rules.rendering import render_generated_rules
@@ -108,8 +108,9 @@ def _render_all(
     create_project_file: bool,
     ides: tuple[str, ...],
 ) -> tuple[PlannedWrite, ...]:
-    profiles = load_profiles(validate_modules=True)
+    profiles = load_profiles(validate_modules=False)
     rules = load_rules()
+    validate_catalog_integrity(profiles, rules)
     effective = compose_effective_rules(manifest, profiles, rules)
     generated = render_generated_rules(effective, manifest.rules_version or __version__)
 
@@ -142,7 +143,9 @@ def init_project(
     selected = profile or suggest_profile(detections)
     if not selected:
         raise ConfigurationError("Could not infer a safe profile; use --profile NAME")
-    profiles = load_profiles(validate_modules=True)
+    profiles = load_profiles(validate_modules=False)
+    rules = load_rules()
+    validate_catalog_integrity(profiles, rules)
     if selected not in profiles:
         raise ConfigurationError(f"Unknown profile: {selected}")
     selected_ides = normalize_ides(ides, default_all=True)
@@ -186,8 +189,9 @@ def add_selection(root: Path, selection: str, dry_run: bool) -> SyncResult:
     root = root.resolve()
     paths = ProjectPaths(root)
     manifest = load_manifest(paths.manifest)
-    profiles = load_profiles(validate_modules=True)
+    profiles = load_profiles(validate_modules=False)
     rules = load_rules()
+    validate_catalog_integrity(profiles, rules)
     if selection in profiles:
         if selection != manifest.profile and selection not in manifest.extra_profiles:
             manifest.extra_profiles.append(selection)

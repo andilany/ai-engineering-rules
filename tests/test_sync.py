@@ -1,6 +1,11 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
+import ai_rules.profiles as profiles_module
+import ai_rules.sync as sync_module
+from ai_rules.errors import ConfigurationError
 from ai_rules.manifest import load_manifest
 from ai_rules.sync import add_selection, init_project, sync_project
 
@@ -159,3 +164,27 @@ def test_legacy_manifest_without_ides_syncs_all_adapters(tmp_path: Path) -> None
     assert (root / "CLAUDE.md").exists()
     assert (root / "GEMINI.md").exists()
     assert (root / ".cursor" / "rules" / "engineering.mdc").exists()
+
+
+def test_init_reports_full_catalog_failure_instead_of_first_profile_module(
+    tmp_path: Path, monkeypatch
+) -> None:
+    root = copy_fixture(tmp_path)
+    complete_rules = sync_module.load_rules()
+    reduced_rules = {
+        rule_id: rule
+        for rule_id, rule in complete_rules.items()
+        if not rule_id.startswith("infrastructure.")
+    }
+    monkeypatch.setattr(sync_module, "load_rules", lambda: reduced_rules)
+    monkeypatch.setattr(profiles_module, "load_rules", lambda: reduced_rules)
+
+    with pytest.raises(ConfigurationError) as exc_info:
+        init_project(root, profile="python-backend", dry_run=False, ides=("cursor",))
+
+    message = str(exc_info.value)
+    assert "Canonical rule catalog is incomplete" in message
+    assert "infrastructure.docker" in message
+    assert "infrastructure.docker-compose" in message
+    assert "infrastructure.kubernetes" in message
+    assert not (root / ".ai-rules.toml").exists()
