@@ -17,14 +17,13 @@ def test_public_metadata_uses_mit() -> None:
     assert (ROOT / "LICENSE").read_text(encoding="utf-8").startswith("MIT License\n")
 
 
-def test_current_version_has_changelog_release_notes_and_public_readmes() -> None:
+def test_current_version_has_changelog_and_public_readmes() -> None:
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     version = pyproject["project"]["version"]
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    release_notes = ROOT / "docs" / "releases" / f"v{version}.md"
-
     assert f"## [{version}]" in changelog
-    assert release_notes.is_file()
+    assert not (ROOT / "docs" / "releases").exists()
+    assert not (ROOT / "docs" / "superpowers").exists()
 
     for path in (ROOT / "README.md", ROOT / "README_EN.md"):
         content = path.read_text(encoding="utf-8").lower()
@@ -58,4 +57,33 @@ def test_release_workflow_is_tag_driven_and_updates_existing_release() -> None:
     assert 'gh release view "$TAG"' in workflow
     assert 'gh release edit "$TAG"' in workflow
     assert 'gh release create "$TAG"' in workflow
+    assert '--notes-output "$RUNNER_TEMP/release-notes.md"' in workflow
+    assert '--notes-file "$RUNNER_TEMP/release-notes.md"' in workflow
+    assert "docs/releases" not in workflow
     assert 'gh release upload "$TAG" dist/* --clobber' in workflow
+
+
+def test_release_check_can_extract_github_release_body(tmp_path: Path) -> None:
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    version = pyproject["project"]["version"]
+    notes = tmp_path / "release-notes.md"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/check_release.py",
+            "--tag",
+            f"v{version}",
+            "--notes-output",
+            str(notes),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    body = notes.read_text(encoding="utf-8")
+    assert "Native" in body or "native" in body
+    assert f"## [{version}]" not in body
+    assert "## 0.2.3" not in body

@@ -171,19 +171,16 @@ The `airules` CLI itself must not:
 
 ## Releases
 
-Release history is tracked in [CHANGELOG.md](CHANGELOG.md). Detailed release notes are stored under [`docs/releases/`](docs/releases/), and the full procedure is documented in [`docs/releasing.md`](docs/releasing.md).
+Release history and GitHub Release notes are tracked in [CHANGELOG.md](CHANGELOG.md). The full procedure is documented in [`docs/releasing.md`](docs/releasing.md).
 
 Every release requires:
 
 1. a matching version in `pyproject.toml`;
-2. a `CHANGELOG.md` entry;
-3. `docs/releases/vX.Y.Z.md`;
-4. a `vX.Y.Z` tag from the verified `main` commit;
-5. a GitHub Release for that tag.
+2. a populated `[X.Y.Z]` section in `CHANGELOG.md`;
+3. a `vX.Y.Z` tag from the verified `main` commit;
+4. a GitHub Release for that tag.
 
-After a tag is pushed, `.github/workflows/release.yml` validates release metadata, runs tests and the package build, then creates or updates the GitHub Release and uploads the wheel/sdist artifacts.
-
-Current release target: [v0.3.0](docs/releases/v0.3.0.md).
+After a tag is pushed, `.github/workflows/release.yml` re-validates metadata, extracts the matching version section from `CHANGELOG.md`, runs tests and the package build, then creates or updates the GitHub Release and uploads wheel/sdist artifacts.
 
 ## License
 
