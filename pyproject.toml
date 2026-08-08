@@ -1,12 +1,14 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
 name = "ai-engineering-rules"
-version = "0.2.3"
+version = "0.3.0"
 description = "Private reusable engineering rules for AI coding agents"
 readme = "README.md"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
   "tomlkit",

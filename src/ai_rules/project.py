@@ -33,12 +33,28 @@ class ProjectPaths:
         return self.root / "CLAUDE.md"
 
     @property
+    def claude_native_dir(self) -> Path:
+        return self.root / ".claude" / "rules" / "airules"
+
+    @property
     def gemini(self) -> Path:
         return self.root / "GEMINI.md"
 
     @property
     def cursor(self) -> Path:
         return self.root / ".cursor" / "rules" / "engineering.mdc"
+
+    @property
+    def cursor_rules_dir(self) -> Path:
+        return self.root / ".cursor" / "rules"
+
+    @property
+    def copilot(self) -> Path:
+        return self.root / ".github" / "copilot-instructions.md"
+
+    @property
+    def copilot_native_dir(self) -> Path:
+        return self.root / ".github" / "instructions" / "airules"
 
 
 def find_project_root(start: Path) -> Path:

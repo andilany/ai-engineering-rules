@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from ai_rules.errors import ConfigurationError
 
-SUPPORTED_IDES: tuple[str, ...] = ("codex", "claude", "cursor", "gemini")
+SUPPORTED_IDES: tuple[str, ...] = ("codex", "claude", "cursor", "copilot", "gemini")
 
 
 def normalize_ides(values: Iterable[str] | None, *, default_all: bool) -> tuple[str, ...]:

@@ -1,13 +1,16 @@
 # ai-engineering-rules
 
+**Русский** | [English](README_EN.md)
+
 Приватный versioned rule-pack для AI coding agents. Репозиторий хранит единый набор инженерных правил и небольшой CLI `airules`, который подключает их к проектам без копирования всего репозитория.
 
-Поддерживаемые агенты в v1:
+Поддерживаемые агенты:
 
-- OpenAI Codex — `AGENTS.md`;
-- Claude Code — `CLAUDE.md`;
-- Gemini CLI — `GEMINI.md`;
-- Cursor — `.cursor/rules/engineering.mdc` + отдельная инструкция для глобальных User Rules.
+- OpenAI Codex — компактный `AGENTS.md`-entrypoint;
+- Claude Code — `CLAUDE.md` + native `.claude/rules/airules/*.md`;
+- Cursor — native `.cursor/rules/airules-*.mdc`;
+- GitHub Copilot — `.github/copilot-instructions.md` + `.github/instructions/airules/*.instructions.md`;
+- Gemini CLI — `GEMINI.md`.
 
 ## Зачем это нужно
 
@@ -26,14 +29,23 @@ Canonical rules живут в одном приватном репозитори
 AGENTS.md
 CLAUDE.md
 GEMINI.md
-.cursor/rules/engineering.mdc
+.cursor/rules/airules-*.mdc
+.claude/rules/airules/*.md
+.github/copilot-instructions.md
+.github/instructions/airules/*.instructions.md
 ```
 
 `.ai-rules/project.md` полностью принадлежит проекту и никогда не перезаписывается `airules sync`.
 
 ## Установка
 
-Из приватного GitHub-репозитория по SSH:
+Стабильная версия после релиза в `main`:
+
+```bash
+uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@main"
+```
+
+Development-версия из `dev`:
 
 ```bash
 uv tool install "git+ssh://git@github.com/<owner>/ai-engineering-rules.git@dev"
@@ -57,13 +69,14 @@ airules bootstrap
 
 ```bash
 airules bootstrap --ide codex
-airules bootstrap --ide claude --ide gemini
+airules bootstrap --ide claude --ide copilot
 ```
 
 Без `--ide` сохраняется прежнее поведение — подготавливаются все поддерживаемые targets. Команда добавляет managed block только в:
 
 - `$CODEX_HOME/AGENTS.md` или `~/.codex/AGENTS.md`;
-- `~/.claude/CLAUDE.md`;
+- `~/.claude/rules/airules/000-core.md`;
+- `$COPILOT_HOME/copilot-instructions.md` или `~/.copilot/copilot-instructions.md`;
 - `~/.gemini/GEMINI.md`;
 - `~/.ai-rules/cursor-user-rules.txt`.
 
@@ -96,6 +109,7 @@ airules init --profile fastapi-backend
 ```bash
 airules init --profile fastapi-backend --ide codex
 airules init --ide codex --ide cursor
+airules init --ide copilot
 ```
 
 Выбор сохраняется в `.ai-rules.toml`. Последующий `airules sync` обновляет только выбранные adapters. Временный override не меняет manifest:
@@ -104,7 +118,7 @@ airules init --ide codex --ide cursor
 airules sync --ide claude
 ```
 
-Невыбранные существующие adapter-файлы никогда не удаляются и не переписываются автоматически. Старые manifests без поля `ides` продолжают означать «все поддерживаемые IDE».
+Невыбранные существующие adapter-файлы не изменяются. Для выбранного adapter `sync` может удалить только устаревшие файлы с доказанным ownership marker `airules`. Старые manifests без поля `ides` продолжают означать «все поддерживаемые агенты».
 
 Начальные профили:
 
@@ -114,6 +128,12 @@ airules sync --ide claude
 - `ml-gpu-service`
 - `frontend-nextjs`
 - `fullstack-python`
+
+### Native adapters
+
+`rules/**/*.md` остаются canonical source. `.ai-rules/generated.md` — полный compiled snapshot effective rules, а native adapters проецируют тот же набор в формат конкретного агента. Cursor, Claude и Copilot получают тематические файлы (`core`, `security/quality`, `backend`, `data/messaging`, `frontend`, `ml/infrastructure`) без копирования всех 82 canonical files по одному.
+
+`.ai-rules/project.md` остаётся user-owned source project-specific инструкций. Cursor и Copilot обновляют свои generated projections при `airules sync`; Claude подключает project file через корневой `CLAUDE.md`.
 
 ## Повседневные команды
 
@@ -168,3 +188,20 @@ Git-коммиты остаются ответственностью польз�
 ## Авторство правил
 
 Формат canonical rules и severity описан в [`docs/rules-authoring.md`](docs/rules-authoring.md), manifest — в [`docs/manifest.md`](docs/manifest.md), особенности агентов — в [`docs/agent-adapters.md`](docs/agent-adapters.md).
+
+## Релизы
+
+История изменений ведётся в [`CHANGELOG.md`](CHANGELOG.md), подробные release notes — в [`docs/releases/`](docs/releases/).
+
+Текущий release candidate: [`v0.3.0`](docs/releases/v0.3.0.md).
+
+Релизный процесс:
+
+1. разработка и проверка выполняются в `dev`;
+2. release candidate сливается в `main`;
+3. из проверенного commit в `main` создаётся тег `vX.Y.Z`;
+4. GitHub Release публикуется из этого тега с соответствующими release notes.
+
+## Лицензия
+
+Репозиторий пока остаётся proprietary и распространяется по условиям [`LICENSE`](LICENSE). Доступ к приватному репозиторию не даёт права на распространение. Если проект станет публичным, владелец сможет отдельно выбрать open-source лицензию.

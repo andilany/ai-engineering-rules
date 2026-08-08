@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 — 2026-08-08
+
+Release notes: [`docs/releases/v0.3.0.md`](docs/releases/v0.3.0.md)
+
+- Added native modular adapters for Cursor, Claude Code, and GitHub Copilot.
+- Added `copilot` as a repeatable `--ide` target for project init/sync and global bootstrap.
+- Cursor now renders thematic `.cursor/rules/airules-*.mdc` files and migrates the old owned `engineering.mdc` adapter.
+- Claude now renders `.claude/rules/airules/*.md` and keeps a short root `CLAUDE.md` project-instruction entrypoint.
+- Copilot now renders `.github/copilot-instructions.md` plus `.github/instructions/airules/*.instructions.md`.
+- Added safe scoped deletion for stale airules-owned native files; unrelated project rules remain untouched.
+- Updated doctor to validate selected native adapter file sets, stale rules, and conflicts.
+- Updated bootstrap for Claude native user rules and Copilot CLI user-level instructions.
+
 ## 0.2.3 — 2026-08-08
 
 - Fixed `airules doctor` to validate only adapters selected by persisted `manifest.ides`.
@@ -32,6 +45,6 @@
 
 - Added modular canonical engineering rules and profile system.
 - Added `airules bootstrap`, `init`, `sync`, `add`, `detect`, `explain`, and `doctor`.
-- Added native adapters for Codex, Claude Code, Gemini CLI, and Cursor.
+- Added initial adapters for Codex, Claude Code, Gemini CLI, and Cursor.
 - Added safe managed blocks, atomic scoped writes, dry-run mode, stack detection, and project-owned overrides.
 - Added Python/FastAPI/Django, frontend, ML/GPU, security, messaging, data, testing, and infrastructure rules.

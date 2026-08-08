@@ -74,7 +74,8 @@ def test_cli_init_accepts_repeatable_ide_and_generates_only_selected(
     assert result.exit_code == 0, result.stdout
     assert load_manifest(root / ".ai-rules.toml").ides == ["codex", "cursor"]
     assert (root / "AGENTS.md").exists()
-    assert (root / ".cursor" / "rules" / "engineering.mdc").exists()
+    assert (root / ".cursor" / "rules" / "airules-000-core.mdc").exists()
+    assert not (root / ".cursor" / "rules" / "engineering.mdc").exists()
     assert not (root / "CLAUDE.md").exists()
     assert not (root / "GEMINI.md").exists()
 

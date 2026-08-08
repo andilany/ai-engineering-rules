@@ -34,3 +34,45 @@ def test_write_outside_scope_is_rejected(tmp_path: Path) -> None:
     scope = WriteScope(root=tmp_path, allowed_exact=frozenset({tmp_path / "AGENTS.md"}))
     with pytest.raises(SafetyError):
         apply_writes((plan_write(outside, "bad"),), dry_run=False, scope=scope)
+
+
+def test_dry_run_delete_reports_change_without_deleting(tmp_path: Path) -> None:
+    from ai_rules.filesystem import apply_deletes, plan_delete
+
+    path = tmp_path / ".cursor" / "rules" / "airules-old.mdc"
+    path.parent.mkdir(parents=True)
+    path.write_text("owned\n", encoding="utf-8")
+    scope = WriteScope(root=tmp_path, allowed_prefixes=(tmp_path / ".cursor" / "rules",))
+
+    planned = plan_delete(path)
+    applied = apply_deletes((planned,), dry_run=True, scope=scope)
+
+    assert applied[0].changed is True
+    assert path.exists()
+
+
+def test_real_delete_and_missing_file_are_safe(tmp_path: Path) -> None:
+    from ai_rules.filesystem import apply_deletes, plan_delete
+
+    path = tmp_path / ".claude" / "rules" / "airules" / "old.md"
+    path.parent.mkdir(parents=True)
+    path.write_text("owned\n", encoding="utf-8")
+    scope = WriteScope(root=tmp_path, allowed_prefixes=(tmp_path / ".claude" / "rules",))
+
+    first = apply_deletes((plan_delete(path),), dry_run=False, scope=scope)
+    second = apply_deletes((plan_delete(path),), dry_run=False, scope=scope)
+
+    assert first[0].changed is True
+    assert second[0].changed is False
+    assert not path.exists()
+
+
+def test_delete_outside_scope_is_rejected(tmp_path: Path) -> None:
+    from ai_rules.filesystem import apply_deletes, plan_delete
+
+    outside = tmp_path.parent / "important.txt"
+    outside.write_text("keep", encoding="utf-8")
+    scope = WriteScope(root=tmp_path, allowed_prefixes=(tmp_path / ".cursor",))
+
+    with pytest.raises(SafetyError):
+        apply_deletes((plan_delete(outside),), dry_run=False, scope=scope)

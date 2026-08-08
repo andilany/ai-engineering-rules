@@ -31,6 +31,9 @@ def _run(action) -> None:
     for write in result.writes:
         state = "change" if write.changed else "unchanged"
         typer.echo(f"{state}: {write.path}")
+    for delete in getattr(result, "deletes", ()):
+        state = "delete" if delete.changed else "unchanged-delete"
+        typer.echo(f"{state}: {delete.path}")
 
 
 @app.command()
@@ -108,11 +111,14 @@ def bootstrap(
     home = Path.home()
     codex_raw = os.environ.get("CODEX_HOME")
     codex_home = Path(codex_raw).expanduser() if codex_raw else None
+    copilot_raw = os.environ.get("COPILOT_HOME")
+    copilot_home = Path(copilot_raw).expanduser() if copilot_raw else None
     selected_ides = tuple(ide) if ide else None
     try:
         result = bootstrap_global(
             home,
             codex_home=codex_home,
+            copilot_home=copilot_home,
             dry_run=dry_run,
             ides=selected_ides,
         )

@@ -89,6 +89,12 @@ class PlannedWrite:
 
 
 @dataclass(frozen=True, slots=True)
+class PlannedDelete:
+    path: Path
+    changed: bool
+
+
+@dataclass(frozen=True, slots=True)
 class DoctorFinding:
     level: str
     code: str
@@ -101,3 +107,4 @@ class SyncResult:
     selected_profiles: tuple[str, ...]
     detections: tuple[Detection, ...] = ()
     warnings: tuple[str, ...] = ()
+    deletes: tuple[PlannedDelete, ...] = ()

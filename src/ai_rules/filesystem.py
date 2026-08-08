@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_rules.errors import SafetyError
-from ai_rules.models import PlannedWrite
+from ai_rules.models import PlannedDelete, PlannedWrite
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,3 +66,24 @@ def apply_writes(
         if write.changed and not dry_run:
             _atomic_write(write.path, write.content)
     return tuple(writes)
+
+
+def plan_delete(path: Path) -> PlannedDelete:
+    return PlannedDelete(path=path, changed=path.exists())
+
+
+def apply_deletes(
+    deletes: Sequence[PlannedDelete],
+    *,
+    dry_run: bool,
+    scope: WriteScope,
+) -> tuple[PlannedDelete, ...]:
+    for delete in deletes:
+        if not _is_allowed(delete.path, scope):
+            raise SafetyError(f"Refusing to delete outside allowed airules paths: {delete.path}")
+        if delete.changed and not dry_run:
+            try:
+                delete.path.unlink()
+            except FileNotFoundError:
+                pass
+    return tuple(deletes)

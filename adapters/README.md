@@ -5,6 +5,7 @@ Runtime adapters генерируются CLI из canonical rules. В этой 
 - Codex → `AGENTS.md`
 - Claude Code → `CLAUDE.md`
 - Gemini CLI → `GEMINI.md`
-- Cursor → `.cursor/rules/engineering.mdc`
+- Cursor → `.cursor/rules/airules-*.mdc`
+- GitHub Copilot → `.github/copilot-instructions.md` + `.github/instructions/airules/*.instructions.md`
 
 Canonical source of truth находится в `rules/` и `profiles/`.

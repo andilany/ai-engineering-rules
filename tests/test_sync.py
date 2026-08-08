@@ -31,7 +31,8 @@ def test_init_detects_fastapi_and_only_creates_airules_files(tmp_path: Path) -> 
         root / "AGENTS.md",
         root / "CLAUDE.md",
         root / "GEMINI.md",
-        root / ".cursor" / "rules" / "engineering.mdc",
+        root / ".cursor" / "rules" / "airules-000-core.mdc",
+        root / ".github" / "copilot-instructions.md",
     ):
         assert path.exists(), path
     assert (root / "pyproject.toml").read_bytes() == original_pyproject
@@ -93,7 +94,8 @@ def test_init_with_multiple_ides_persists_order_and_only_selected_adapters(tmp_p
     manifest = load_manifest(root / ".ai-rules.toml")
     assert manifest.ides == ["cursor", "codex"]
     assert (root / "AGENTS.md").exists()
-    assert (root / ".cursor" / "rules" / "engineering.mdc").exists()
+    assert (root / ".cursor" / "rules" / "airules-000-core.mdc").exists()
+    assert not (root / ".cursor" / "rules" / "engineering.mdc").exists()
     assert not (root / "CLAUDE.md").exists()
     assert not (root / "GEMINI.md").exists()
 
@@ -163,7 +165,8 @@ def test_legacy_manifest_without_ides_syncs_all_adapters(tmp_path: Path) -> None
     assert (root / "AGENTS.md").exists()
     assert (root / "CLAUDE.md").exists()
     assert (root / "GEMINI.md").exists()
-    assert (root / ".cursor" / "rules" / "engineering.mdc").exists()
+    assert (root / ".cursor" / "rules" / "airules-000-core.mdc").exists()
+    assert (root / ".github" / "copilot-instructions.md").exists()
 
 
 def test_init_reports_full_catalog_failure_instead_of_first_profile_module(
@@ -188,3 +191,85 @@ def test_init_reports_full_catalog_failure_instead_of_first_profile_module(
     assert "infrastructure.docker-compose" in message
     assert "infrastructure.kubernetes" in message
     assert not (root / ".ai-rules.toml").exists()
+
+
+def test_cursor_init_generates_native_rules_and_no_legacy_adapter(tmp_path: Path) -> None:
+    root = copy_fixture(tmp_path)
+
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+
+    rules_dir = root / ".cursor" / "rules"
+    assert (rules_dir / "airules-000-core.mdc").exists()
+    assert (rules_dir / "airules-999-project.mdc").exists()
+    assert not (rules_dir / "engineering.mdc").exists()
+    joined = "\n".join(path.read_text(encoding="utf-8") for path in rules_dir.glob("airules-*.mdc"))
+    assert "../../" not in joined
+    assert "# FastAPI" in joined
+
+
+def test_claude_init_generates_native_rules_and_short_root_entrypoint(tmp_path: Path) -> None:
+    root = copy_fixture(tmp_path)
+
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("claude",))
+
+    root_instructions = (root / "CLAUDE.md").read_text(encoding="utf-8")
+    native_dir = root / ".claude" / "rules" / "airules"
+    assert (native_dir / "000-core.md").exists()
+    assert "@.ai-rules/project.md" in root_instructions
+    assert "generated.md" not in root_instructions
+    assert "# FastAPI" in "\n".join(
+        path.read_text(encoding="utf-8") for path in native_dir.glob("*.md")
+    )
+
+
+def test_copilot_init_generates_repository_and_modular_instructions(tmp_path: Path) -> None:
+    root = copy_fixture(tmp_path)
+
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("copilot",))
+
+    manifest = load_manifest(root / ".ai-rules.toml")
+    assert manifest.ides == ["copilot"]
+    root_instructions = root / ".github" / "copilot-instructions.md"
+    native_dir = root / ".github" / "instructions" / "airules"
+    assert root_instructions.exists()
+    assert (native_dir / "000-core.instructions.md").exists()
+    assert 'applyTo: "**"' in (native_dir / "000-core.instructions.md").read_text(
+        encoding="utf-8"
+    )
+    assert not (root / "AGENTS.md").exists()
+    assert not (root / "CLAUDE.md").exists()
+    assert not (root / "GEMINI.md").exists()
+
+
+def test_cursor_sync_removes_only_owned_legacy_and_stale_rules(tmp_path: Path) -> None:
+    from ai_rules.adapters.cursor import OWNER, render_cursor
+
+    root = copy_fixture(tmp_path)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    rules_dir = root / ".cursor" / "rules"
+    legacy = rules_dir / "engineering.mdc"
+    legacy.write_text(render_cursor(None), encoding="utf-8")
+    stale = rules_dir / "airules-stale.mdc"
+    stale.write_text(f"{OWNER}\nstale\n", encoding="utf-8")
+    foreign = rules_dir / "airules-user.mdc"
+    foreign.write_text("user owned\n", encoding="utf-8")
+
+    sync_project(root, dry_run=False)
+
+    assert not legacy.exists()
+    assert not stale.exists()
+    assert foreign.read_text(encoding="utf-8") == "user owned\n"
+
+
+def test_native_adapter_deletions_are_dry_run_safe(tmp_path: Path) -> None:
+    from ai_rules.adapters.cursor import OWNER
+
+    root = copy_fixture(tmp_path)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    stale = root / ".cursor" / "rules" / "airules-stale.mdc"
+    stale.write_text(f"{OWNER}\nstale\n", encoding="utf-8")
+
+    result = sync_project(root, dry_run=True)
+
+    assert stale.exists()
+    assert any(delete.path == stale and delete.changed for delete in result.deletes)

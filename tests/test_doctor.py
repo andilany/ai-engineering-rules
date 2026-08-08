@@ -77,3 +77,55 @@ def test_doctor_legacy_manifest_without_ides_checks_all_adapters(tmp_path: Path)
     assert "claude_adapter_outdated" in adapter_codes
     assert "gemini_adapter_outdated" in adapter_codes
     assert "cursor_adapter_outdated" not in adapter_codes
+
+
+def test_doctor_reports_missing_cursor_native_rule(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    shutil.copytree(FIXTURE, root)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    missing = root / ".cursor" / "rules" / "airules-000-core.mdc"
+    missing.unlink()
+
+    findings = doctor_project(root)
+
+    assert any(f.code == "cursor_adapter_outdated" and f.level == "WARN" for f in findings)
+
+
+def test_doctor_reports_stale_owned_cursor_rule(tmp_path: Path) -> None:
+    from ai_rules.adapters.cursor import OWNER
+
+    root = tmp_path / "project"
+    shutil.copytree(FIXTURE, root)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    stale = root / ".cursor" / "rules" / "airules-stale.mdc"
+    stale.write_text(f"{OWNER}\nstale\n", encoding="utf-8")
+
+    findings = doctor_project(root)
+
+    assert any(f.code == "cursor_adapter_stale" for f in findings)
+
+
+def test_doctor_validates_claude_native_rules(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    shutil.copytree(FIXTURE, root)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("claude",))
+    target = root / ".claude" / "rules" / "airules" / "000-core.md"
+    target.write_text(target.read_text(encoding="utf-8") + "changed\n", encoding="utf-8")
+
+    findings = doctor_project(root)
+
+    assert any(f.code == "claude_adapter_outdated" for f in findings)
+    assert not any(f.code.startswith("cursor_adapter") for f in findings)
+
+
+def test_doctor_validates_copilot_native_rules(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    shutil.copytree(FIXTURE, root)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("copilot",))
+    target = root / ".github" / "instructions" / "airules" / "000-core.instructions.md"
+    target.unlink()
+
+    findings = doctor_project(root)
+
+    assert any(f.code == "copilot_adapter_outdated" for f in findings)
+    assert not any(f.code.startswith("claude_adapter") for f in findings)

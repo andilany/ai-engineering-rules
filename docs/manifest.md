@@ -5,7 +5,7 @@ Manifest хранит активный профиль и явные technology f
 ```toml
 version = 1
 profile = "fastapi-backend"
-rules_version = "0.2.0"
+rules_version = "0.3.0"
 ides = ["codex", "cursor"]
 extra_profiles = ["ml-gpu-service"]
 include_modules = []
@@ -47,7 +47,7 @@ compose = true
 - `version` — версия схемы manifest, сейчас только `1`.
 - `profile` — основной профиль.
 - `rules_version` — версия rule-pack, обновляется `sync`.
-- `ides` — ordered list управляемых project adapters: `codex`, `claude`, `cursor`, `gemini`. В новых manifests поле записывается явно. Если его нет в старом manifest, `sync` считает активными все четыре adapters. Пустой список недопустим.
+- `ides` — ordered list управляемых project adapters: `codex`, `claude`, `cursor`, `copilot`, `gemini`. В новых manifests поле записывается явно. Если его нет в старом manifest, `sync` считает активными все поддерживаемые adapters. Пустой список недопустим.
 - `extra_profiles` — дополнительные профили.
 - `include_modules` — явное подключение canonical rule IDs.
 - `exclude_modules` — явное исключение модулей, кроме mandatory core.
