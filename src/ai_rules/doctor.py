@@ -24,14 +24,9 @@ from ai_rules.models import DoctorFinding, EffectiveRules
 from ai_rules.precedence import compose_effective_rules, validate_catalog_integrity
 from ai_rules.profiles import load_profiles
 from ai_rules.project import ProjectPaths
+from ai_rules.project_instructions import PROJECT_INSTRUCTIONS_TEMPLATE, is_project_incomplete
 from ai_rules.rendering import render_generated_rules
 from ai_rules.rules import load_rules
-
-_PROJECT_TEMPLATE = """# Project-Specific AI Instructions
-
-Add repository-specific architecture, testing, operational, and business constraints here.
-This file is user-owned and is never overwritten by `airules sync`.
-"""
 
 
 def _read(path: Path) -> str | None:
@@ -111,13 +106,13 @@ def _check_cursor(
         pattern="airules-*.mdc",
         code_prefix="cursor",
     )
-    legacy = _read(paths.cursor)
+    legacy = _read(paths.legacy_cursor_rule)
     if is_owned_cursor_rule(legacy):
         findings.append(
             DoctorFinding(
                 "WARN",
                 "cursor_adapter_stale",
-                f"Legacy airules Cursor adapter needs migration: {paths.cursor}",
+                f"Legacy airules Cursor adapter needs migration: {paths.legacy_cursor_rule}",
             )
         )
 
@@ -167,7 +162,16 @@ def doctor_project(root: Path) -> tuple[DoctorFinding, ...]:
                 "Missing user-owned .ai-rules/project.md",
             )
         )
-        project_text = _PROJECT_TEMPLATE
+        project_text = PROJECT_INSTRUCTIONS_TEMPLATE
+    elif is_project_incomplete(project_text):
+        findings.append(
+            DoctorFinding(
+                "WARN",
+                "project_rules_incomplete",
+                "Project onboarding is incomplete; complete .ai-rules/project.md with your AI "
+                "coding agent and remove the incomplete marker.",
+            )
+        )
 
     selected_ides = (
         SUPPORTED_IDES

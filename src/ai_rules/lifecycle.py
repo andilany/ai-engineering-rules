@@ -34,7 +34,7 @@ def _scope(paths: ProjectPaths) -> WriteScope:
                 paths.codex,
                 paths.claude,
                 paths.gemini,
-                paths.cursor,
+                paths.legacy_cursor_rule,
                 paths.copilot,
             }
         ),
@@ -93,8 +93,8 @@ def plan_project_cleanup(
             elif path.name.startswith("airules-"):
                 warnings.append(f"Skipped non-owned airules-looking file: {path}")
 
-    if _owned(_read(paths.cursor)):
-        deletes.append(plan_delete(paths.cursor))
+    if _owned(_read(paths.legacy_cursor_rule)):
+        deletes.append(plan_delete(paths.legacy_cursor_rule))
 
     deletes.append(plan_delete(paths.manifest))
     deletes.append(plan_delete(paths.generated))

@@ -15,4 +15,5 @@ def test_project_paths_are_fixed(tmp_path: Path) -> None:
     paths = ProjectPaths(tmp_path)
     assert paths.manifest == tmp_path / ".ai-rules.toml"
     assert paths.generated == tmp_path / ".ai-rules" / "generated.md"
-    assert paths.cursor == tmp_path / ".cursor" / "rules" / "engineering.mdc"
+    assert paths.cursor_rules_dir == tmp_path / ".cursor" / "rules"
+    assert paths.legacy_cursor_rule == tmp_path / ".cursor" / "rules" / "engineering.mdc"
