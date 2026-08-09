@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No unreleased changes yet.
+- Refreshed the Russian and English README files to match the current interactive CLI, lifecycle commands, native adapter layout, and Cursor Project Rules workflow.
+- Documented `.cursor/rules/airules-*.mdc` as the recommended Cursor integration path and marked `~/.ai-rules/cursor-user-rules.txt` as a legacy bootstrap compatibility artifact rather than the project rules location.
 
 ## [0.3.1] — 2026-08-08
 
