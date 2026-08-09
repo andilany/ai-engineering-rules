@@ -10,12 +10,12 @@ LEGACY_FILENAME = "engineering.mdc"
 
 def _owned_mdc(description: str, body: str) -> str:
     return (
-        f"{OWNER}\n"
         "---\n"
         f"description: {description}\n"
         "globs:\n"
         "alwaysApply: true\n"
         "---\n\n"
+        f"{OWNER}\n\n"
         f"{body.rstrip()}\n"
     )
 
