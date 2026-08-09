@@ -14,6 +14,7 @@
 - Added `airules uninstall --purge` for explicitly deleting the user-owned `.ai-rules/project.md` file.
 - Added `--yes`, `--dry-run`, and `--interactive/--no-interactive` lifecycle controls while preserving existing `--profile` and `--ide` automation workflows.
 - Restored the aggregate `SyncResult.changed` compatibility property used by lifecycle and end-to-end callers.
+- Fixed Cursor `.mdc` generation so YAML frontmatter starts at the first byte and the airules ownership marker is written after the closing frontmatter delimiter, restoring Cursor rule discovery while preserving safe managed cleanup.
 
 ## [0.3.0] — 2026-08-08
 
