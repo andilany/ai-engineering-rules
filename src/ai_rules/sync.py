@@ -15,10 +15,7 @@ from ai_rules.adapters.copilot import (
     render_copilot,
     render_copilot_native,
 )
-from ai_rules.adapters.cursor import (
-    is_owned_cursor_rule,
-    render_cursor_native,
-)
+from ai_rules.adapters.cursor import is_owned_cursor_rule, render_cursor_native
 from ai_rules.adapters.gemini import render_gemini
 from ai_rules.detection import detect_project, suggest_extra_profiles, suggest_profile
 from ai_rules.errors import ConfigurationError
@@ -43,14 +40,9 @@ from ai_rules.models import (
 from ai_rules.precedence import compose_effective_rules, validate_catalog_integrity
 from ai_rules.profiles import load_profiles
 from ai_rules.project import ProjectPaths
+from ai_rules.project_instructions import PROJECT_INSTRUCTIONS_TEMPLATE
 from ai_rules.rendering import render_generated_rules
 from ai_rules.rules import load_rules
-
-_PROJECT_TEMPLATE = """# Project-Specific AI Instructions
-
-Add repository-specific architecture, testing, operational, and business constraints here.
-This file is user-owned and is never overwritten by `airules sync`.
-"""
 
 _DETECTION_MANIFEST_MAP: dict[str, tuple[str, str]] = {
     "python": ("language", "python"),
@@ -95,7 +87,7 @@ def _scope(paths: ProjectPaths) -> WriteScope:
                 paths.codex,
                 paths.claude,
                 paths.gemini,
-                paths.cursor,
+                paths.legacy_cursor_rule,
                 paths.copilot,
             }
         ),
@@ -191,9 +183,9 @@ def _render_adapter_files(
         )
         writes.extend(native_writes)
         deletes.extend(native_deletes)
-        legacy = _read_text(paths.cursor)
+        legacy = _read_text(paths.legacy_cursor_rule)
         if is_owned_cursor_rule(legacy):
-            deletes.append(plan_delete(paths.cursor))
+            deletes.append(plan_delete(paths.legacy_cursor_rule))
 
     if "copilot" in ides:
         writes.append(
@@ -227,7 +219,7 @@ def _render_all(
     validate_catalog_integrity(profiles, rules)
     effective = compose_effective_rules(manifest, profiles, rules)
     generated = render_generated_rules(effective, manifest.rules_version or __version__)
-    project_text = _read_text(paths.project_rules) or _PROJECT_TEMPLATE
+    project_text = _read_text(paths.project_rules) or PROJECT_INSTRUCTIONS_TEMPLATE
 
     writes: list[PlannedWrite] = [
         plan_write(paths.manifest, render_manifest(manifest, _read_text(paths.manifest))),
@@ -236,7 +228,7 @@ def _render_all(
     adapter_writes, deletes = _render_adapter_files(paths, effective, project_text, ides)
     writes.extend(adapter_writes)
     if create_project_file and not paths.project_rules.exists():
-        writes.append(plan_write(paths.project_rules, _PROJECT_TEMPLATE))
+        writes.append(plan_write(paths.project_rules, PROJECT_INSTRUCTIONS_TEMPLATE))
     return tuple(writes), tuple(deletes)
 
 

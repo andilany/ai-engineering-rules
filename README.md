@@ -2,45 +2,19 @@
 
 **Русский** | [English](README_EN.md)
 
-Версионируемый набор инженерных правил для AI coding agents. Репозиторий хранит единый canonical rule catalog, а CLI `airules` собирает из него только релевантные правила и подключает их к выбранным агентам в native-формате.
+Версионируемый набор инженерных правил для AI coding agents. `airules` определяет стек проекта, собирает релевантные правила из canonical catalog и генерирует native-инструкции только для выбранных агентов.
 
-Поддерживаемые агенты:
-
-- OpenAI Codex — компактный `AGENTS.md` entrypoint;
-- Claude Code — `CLAUDE.md` + `.claude/rules/airules/*.md`;
-- Cursor — `.cursor/rules/airules-*.mdc`;
-- GitHub Copilot — `.github/copilot-instructions.md` + `.github/instructions/airules/*.instructions.md`;
-- Gemini CLI — `GEMINI.md`.
-
-## Что делает airules
-
-`airules` не генерирует приложение и не меняет архитектуру проекта. Он добавляет инженерные инструкции для AI-агентов: правила работы с кодом, тестированием, безопасностью, выбранным backend/frontend/ML/data/infrastructure стеком и project-specific ограничениями.
-
-Основной принцип: **один canonical набор правил → effective rules конкретного проекта → native adapters выбранных агентов**.
-
-```text
-rules/**/*.md
-        │
-        └── effective rule set
-              │
-              ├── .ai-rules/generated.md
-              ├── .cursor/rules/airules-*.mdc
-              ├── .claude/rules/airules/*.md
-              ├── .github/instructions/airules/*.instructions.md
-              ├── AGENTS.md
-              ├── CLAUDE.md
-              └── GEMINI.md
-```
+Поддерживаются **OpenAI Codex, Claude Code, Cursor, GitHub Copilot и Gemini CLI**.
 
 ## Установка
 
-Стабильная версия из `main`:
+Стабильная версия:
 
 ```bash
 uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@main"
 ```
 
-Development-версия из `dev`:
+Development-версия:
 
 ```bash
 uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@dev"
@@ -52,301 +26,68 @@ uv tool install "git+https://github.com/andilany/ai-engineering-rules.git@dev"
 uv tool upgrade ai-engineering-rules
 ```
 
-Проверка версии:
-
-```bash
-airules version
-```
-
 ## Быстрый старт
 
-Перейдите в корень проекта и запустите:
+В корне проекта:
 
 ```bash
-cd my-project
 airules init
 ```
 
-В интерактивном терминале откроется wizard. Он:
+В интерактивном терминале wizard предложит detected stack, позволит выбрать только нужные группы правил и отдельно выбрать AI-агентов.
 
-1. анализирует безопасные признаки проекта;
-2. предлагает detected stack как defaults;
-3. спрашивает, какие группы правил нужны;
-4. отдельно спрашивает, какие AI-агенты используются;
-5. показывает итоговую конфигурацию;
-6. применяет её только после подтверждения.
+После установки `airules` создаёт `.ai-rules/project.md` и предлагает готовый prompt для вашего AI coding agent. Агент должен проанализировать репозиторий, задать вам вопросы и заполнить project-specific инструкции только подтверждёнными фактами и решениями.
 
-Можно выбрать только нужные группы, например:
+После заполнения:
 
-- Backend;
-- Frontend;
-- ML / AI / GPU;
-- Databases / data stores;
-- Messaging / task queues;
-- Infrastructure / Docker / Kubernetes;
-- Authentication / security.
+```bash
+airules sync
+airules doctor
+```
 
-Wizard использует минимальный профиль `custom`, поэтому выбор FastAPI сам по себе не включает PostgreSQL, Redis, Docker или Keycloak. Дополнительные группы подключаются только если пользователь выбрал их явно.
-
-Для CI и скриптов остаётся non-interactive режим:
+Для CI и скриптов:
 
 ```bash
 airules init --no-interactive --profile fastapi-backend --ide cursor
 ```
 
-`--ide` можно указывать несколько раз:
+## Основные команды
 
 ```bash
-airules init --profile fastapi-backend --ide cursor --ide claude
+airules detect       # показать обнаруженный стек
+airules init         # подключить правила к проекту
+airules sync         # обновить generated rules и adapters
+airules doctor       # проверить состояние конфигурации
+airules explain      # показать effective rules и provenance
+airules add NAME     # добавить profile или отдельный rule
+airules reconfigure  # заново пройти настройку
+airules uninstall    # безопасно удалить airules-managed данные
 ```
 
-Выбор сохраняется в `.ai-rules.toml`.
-
-## Файлы в подключённом проекте
-
-В зависимости от выбранных агентов `airules` управляет следующими файлами:
-
-```text
-.ai-rules.toml
-.ai-rules/
-├── generated.md
-└── project.md
-
-AGENTS.md
-CLAUDE.md
-GEMINI.md
-
-.cursor/
-└── rules/
-    ├── airules-000-core.mdc
-    ├── airules-100-architecture.mdc
-    ├── airules-200-security-quality.mdc
-    ├── airules-300-language-backend.mdc
-    ├── airules-400-data-messaging.mdc
-    ├── airules-500-frontend.mdc
-    ├── airules-600-ml-infrastructure.mdc
-    └── airules-999-project.mdc
-
-.claude/
-└── rules/
-    └── airules/
-        └── *.md
-
-.github/
-├── copilot-instructions.md
-└── instructions/
-    └── airules/
-        └── *.instructions.md
-```
-
-Пустые тематические группы не создаются, поэтому конкретный проект обычно получает только часть файлов из примера выше.
-
-`.ai-rules/generated.md` — полный generated snapshot effective rules.
-
-`.ai-rules/project.md` — **user-owned файл** для project-specific инструкций. `airules sync` его не перезаписывает.
-
-## Cursor: актуальная схема
-
-Для Cursor `airules` использует **Project Rules**. Они находятся в стандартном каталоге проекта:
-
-```text
-.cursor/rules/
-```
-
-и хранятся как `.mdc` файлы:
-
-```text
-.cursor/rules/airules-000-core.mdc
-.cursor/rules/airules-200-security-quality.mdc
-.cursor/rules/airules-300-language-backend.mdc
-.cursor/rules/airules-999-project.mdc
-...
-```
-
-Именно эти файлы создают и обновляют:
-
-```bash
-airules init --ide cursor
-airules sync
-```
-
-Cursor Project Rules являются version-controlled частью проекта. `airules` не использует legacy `.cursorrules` как основной adapter.
-
-Каждый generated `.mdc` начинается с YAML frontmatter. Ownership marker размещается **после** закрывающего `---`, чтобы Cursor корректно распознавал правило:
-
-```md
----
-description: airules Core engineering rules
-globs:
-alwaysApply: true
----
-
-<!-- ai-engineering-rules:owned -->
-
-# Rule content
-```
-
-`airules sync` распознаёт старые airules-owned `.mdc` и перегенерирует их в актуальном формате.
-
-### Cursor User Rules
-
-Cursor User Rules — отдельные глобальные настройки самого Cursor и не требуются для project integration `airules`.
-
-Рекомендуемый flow для `airules` — **Project Rules в `.cursor/rules/`**, а не ручное копирование project rules в Cursor Settings.
-
-Текущая команда `airules bootstrap` может создавать `~/.ai-rules/cursor-user-rules.txt` как legacy compatibility helper. Этот файл не является Cursor Project Rule и не используется `airules init/sync` для подключения правил к репозиторию.
+`reconfigure` и `uninstall` сначала показывают план изменений и требуют подтверждение. `.ai-rules/project.md` считается user-owned и сохраняется при обычном uninstall; удалить его можно только через `airules uninstall --purge`.
 
 ## Глобальный Universal Core
 
-Для агентов, поддерживающих filesystem-based user/global instructions, можно один раз выполнить:
-
 ```bash
 airules bootstrap
 ```
 
-Или ограничить targets:
-
-```bash
-airules bootstrap --ide codex
-airules bootstrap --ide claude --ide copilot
-```
-
-Основные global targets:
-
-- Codex: `$CODEX_HOME/AGENTS.md` или `~/.codex/AGENTS.md`;
-- Claude Code: `~/.claude/rules/airules/000-core.md`;
-- GitHub Copilot: `$COPILOT_HOME/copilot-instructions.md` или `~/.copilot/copilot-instructions.md`;
-- Gemini CLI: `~/.gemini/GEMINI.md`.
-
-Для Cursor project-specific rules используйте `airules init` / `airules sync` и `.cursor/rules/`.
-
-Проверка bootstrap без записи:
-
-```bash
-airules bootstrap --dry-run
-```
-
-## Native adapters
-
-| Agent | Project adapter | Поведение |
-|---|---|---|
-| Codex | `AGENTS.md` | Короткий entrypoint к generated/project instructions |
-| Claude Code | `CLAUDE.md` + `.claude/rules/airules/*.md` | Native тематические правила |
-| Cursor | `.cursor/rules/airules-*.mdc` | Native MDC Project Rules |
-| GitHub Copilot | `.github/copilot-instructions.md` + `.github/instructions/airules/*.instructions.md` | Repository + modular instructions |
-| Gemini CLI | `GEMINI.md` | Project adapter |
-
-Cursor, Claude и Copilot получают тематические проекции effective rule set: core, architecture, security/quality, language/backend, data/messaging, frontend, ML/infrastructure. Пустые группы пропускаются.
-
-## Профили
-
-Доступные базовые профили:
-
-- `custom` — минимальная база для интерактивного wizard;
-- `python-backend`;
-- `fastapi-backend`;
-- `django-backend`;
-- `ml-gpu-service`;
-- `frontend-nextjs`;
-- `fullstack-python`.
-
-Профиль не устанавливает технологии в проект. Он только выбирает AI guidance.
-
-## Повседневные команды
-
-```bash
-airules version
-airules bootstrap
-airules init
-airules detect
-airules explain
-airules doctor
-airules sync
-airules add ml-gpu-service
-airules reconfigure
-airules uninstall
-```
-
-### `airules detect`
-
-Показывает обнаруженные признаки стека. Не импортирует код приложения, не читает значения `.env` и не запускает проект.
-
-### `airules sync`
-
-Перечитывает `.ai-rules.toml` и обновляет только `airules`-managed generated content и выбранные adapters.
-
-Временный IDE override не меняет manifest:
-
-```bash
-airules sync --ide cursor
-```
-
-Невыбранные adapter-файлы не изменяются. Stale generated files удаляются только при наличии ownership marker.
-
-### `airules reconfigure`
-
-Показывает текущие managed-файлы и предупреждает о замене конфигурации. После обязательного подтверждения запускается новый wizard. До финального `Apply?` файловая система не изменяется.
-
-`.ai-rules/project.md` сохраняется.
-
-### `airules uninstall`
-
-Перед удалением показывает точный список `DELETE` / `MODIFY` и требует подтверждение `[y/N]`.
-
-По умолчанию `.ai-rules/project.md` сохраняется. Полное удаление выполняется только явно:
-
-```bash
-airules uninstall --purge
-```
-
-Для automation доступны `--yes` и `--dry-run`.
-
-## Модель приоритетов
-
-Уровни правил:
-
-1. `REQUIRED` — инженерные invariants;
-2. `USER_DECISION` — модель анализирует и рекомендует, решение принимает пользователь;
-3. `PREFERRED` — greenfield/default preference;
-4. `CONDITIONAL` — применяется только когда технология или ситуация релевантна;
-5. `OPTIONAL` — возможный вариант.
-
-Прямой запрос пользователя и project-specific инструкции имеют приоритет над generic preferences.
-
-## Что airules не делает
-
-CLI не должен:
-
-- выполнять `git add`, commit, push, merge или rebase;
-- создавать PR или GitHub-репозитории;
-- создавать или переключать Git-ветки;
-- устанавливать зависимости приложения;
-- менять package manager приложения;
-- изменять исходный код приложения;
-- менять архитектуру проекта;
-- выполнять миграции БД;
-- деплоить или изменять инфраструктуру.
+Global bootstrap поддерживается для Codex, Claude Code, GitHub Copilot и Gemini CLI. Cursor использует project rules в `.cursor/rules/`; для него применяется `airules init --ide cursor`.
 
 ## Документация
 
-- [Rule authoring](docs/rules-authoring.md)
-- [Manifest](docs/manifest.md)
-- [Agent adapters](docs/agent-adapters.md)
-- [Release process](docs/releasing.md)
+- [Начало работы](docs/ru/getting-started.md)
+- [Project-specific инструкции и AI-onboarding](docs/ru/project-instructions.md)
+- [CLI reference](docs/ru/cli.md)
+- [Конфигурация и profiles](docs/ru/configuration.md)
+- Интеграции: [Codex](docs/ru/agents/codex.md) · [Claude Code](docs/ru/agents/claude.md) · [Cursor](docs/ru/agents/cursor.md) · [GitHub Copilot](docs/ru/agents/copilot.md) · [Gemini CLI](docs/ru/agents/gemini.md)
 
-## Релизы
+Canonical rules находятся в `rules/`, profiles — в `profiles/`. `.ai-rules/generated.md` является generated snapshot, а `.ai-rules/project.md` принадлежит проекту и не перезаписывается `airules sync`.
 
-История изменений и текст GitHub Release ведутся в [`CHANGELOG.md`](CHANGELOG.md).
+## Что CLI не делает
 
-Для каждого релиза обязательны:
-
-1. версия `X.Y.Z` в `pyproject.toml`;
-2. заполненная секция `[X.Y.Z]` в `CHANGELOG.md`;
-3. тег `vX.Y.Z` из проверенного `main`;
-4. GitHub Release для этого тега.
-
-`.github/workflows/release.yml` проверяет metadata, запускает тесты и сборку, создаёт или обновляет GitHub Release и прикладывает wheel/sdist.
+`airules` не меняет исходный код приложения, архитектуру, package manager, зависимости, БД или инфраструктуру и не выполняет Git commit/push/merge. Он управляет только AI guidance и своими adapter-файлами.
 
 ## Лицензия
 
-Проект распространяется по [MIT License](LICENSE).
+[MIT License](LICENSE).

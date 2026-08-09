@@ -1,9 +1,12 @@
 from pathlib import Path
 
-from ai_rules.bootstrap import bootstrap
+import pytest
+
+from ai_rules.bootstrap import BOOTSTRAP_IDES, bootstrap
+from ai_rules.errors import ConfigurationError
 
 
-def test_bootstrap_writes_only_global_core_and_preserves_content(tmp_path: Path) -> None:
+def test_bootstrap_writes_only_supported_global_targets(tmp_path: Path) -> None:
     home = tmp_path / "home"
     codex_home = tmp_path / "custom-codex"
     claude = home / ".claude" / "CLAUDE.md"
@@ -12,12 +15,11 @@ def test_bootstrap_writes_only_global_core_and_preserves_content(tmp_path: Path)
 
     result = bootstrap(home, codex_home=codex_home, dry_run=False)
 
+    assert "cursor" not in BOOTSTRAP_IDES
     assert (codex_home / "AGENTS.md").exists()
     assert (home / ".gemini" / "GEMINI.md").exists()
     assert "# My Claude rules\n" in claude.read_text(encoding="utf-8")
-    cursor = home / ".ai-rules" / "cursor-user-rules.txt"
-    assert cursor.exists()
-    assert "Cursor Settings > Rules > User Rules" in cursor.read_text(encoding="utf-8")
+    assert not (home / ".ai-rules" / "cursor-user-rules.txt").exists()
     assert all("fastapi" not in write.content.lower() for write in result.writes)
 
 
@@ -32,26 +34,21 @@ def test_bootstrap_codex_only_writes_only_codex(tmp_path: Path) -> None:
     home = tmp_path / "home"
     codex_home = tmp_path / "custom-codex"
 
-    result = bootstrap(home, codex_home=codex_home, dry_run=False, ides=("codex",))
+    bootstrap(home, codex_home=codex_home, dry_run=False, ides=("codex",))
 
     assert (codex_home / "AGENTS.md").exists()
     assert not (home / ".claude" / "CLAUDE.md").exists()
     assert not (home / ".gemini" / "GEMINI.md").exists()
     assert not (home / ".ai-rules" / "cursor-user-rules.txt").exists()
-    assert result.cursor_note == ""
 
 
-def test_bootstrap_cursor_only_writes_helper_and_returns_note(tmp_path: Path) -> None:
+def test_bootstrap_rejects_cursor_global_target(tmp_path: Path) -> None:
     home = tmp_path / "home"
 
-    result = bootstrap(home, codex_home=None, dry_run=False, ides=("cursor",))
+    with pytest.raises(ConfigurationError, match="airules init --ide cursor"):
+        bootstrap(home, codex_home=None, dry_run=False, ides=("cursor",))
 
-    cursor = home / ".ai-rules" / "cursor-user-rules.txt"
-    assert cursor.exists()
-    assert not (home / ".codex" / "AGENTS.md").exists()
-    assert not (home / ".claude" / "CLAUDE.md").exists()
-    assert not (home / ".gemini" / "GEMINI.md").exists()
-    assert "Cursor" in result.cursor_note
+    assert not home.exists()
 
 
 def test_bootstrap_multiple_ides_only_writes_selected_targets(tmp_path: Path) -> None:

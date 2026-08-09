@@ -2,7 +2,8 @@ import shutil
 from pathlib import Path
 
 from ai_rules.doctor import doctor_project
-from ai_rules.sync import init_project
+from ai_rules.project_instructions import PROJECT_INCOMPLETE_MARKER
+from ai_rules.sync import init_project, sync_project
 
 FIXTURE = Path(__file__).parent / "fixtures" / "projects" / "fastapi"
 
@@ -14,9 +15,36 @@ def make_project(tmp_path: Path) -> Path:
     return root
 
 
+def complete_project_rules(root: Path) -> None:
+    (root / ".ai-rules" / "project.md").write_text(
+        "# Project-Specific AI Instructions\n\nConfirmed project constraints.\n",
+        encoding="utf-8",
+    )
+
+
 def test_doctor_healthy_project_has_no_errors(tmp_path: Path) -> None:
     root = make_project(tmp_path)
-    assert not [finding for finding in doctor_project(root) if finding.level == "ERROR"]
+    complete_project_rules(root)
+    sync_project(root, dry_run=False)
+    findings = doctor_project(root)
+    assert not [finding for finding in findings if finding.level == "ERROR"]
+    assert any(finding.code == "healthy" for finding in findings)
+
+
+def test_doctor_warns_while_project_onboarding_is_incomplete(tmp_path: Path) -> None:
+    root = make_project(tmp_path)
+    project_rules = root / ".ai-rules" / "project.md"
+
+    assert PROJECT_INCOMPLETE_MARKER in project_rules.read_text(encoding="utf-8")
+    assert any(
+        finding.code == "project_rules_incomplete" and finding.level == "WARN"
+        for finding in doctor_project(root)
+    )
+
+    complete_project_rules(root)
+    assert not any(
+        finding.code == "project_rules_incomplete" for finding in doctor_project(root)
+    )
 
 
 def test_doctor_reports_missing_or_modified_generated(tmp_path: Path) -> None:
@@ -46,6 +74,8 @@ def test_doctor_checks_only_persisted_cursor_adapter(tmp_path: Path) -> None:
     root = tmp_path / "project"
     shutil.copytree(FIXTURE, root)
     init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    complete_project_rules(root)
+    sync_project(root, dry_run=False)
 
     findings = doctor_project(root)
     adapter_codes = {finding.code for finding in findings if "adapter" in finding.code}
@@ -103,6 +133,23 @@ def test_doctor_reports_stale_owned_cursor_rule(tmp_path: Path) -> None:
     findings = doctor_project(root)
 
     assert any(f.code == "cursor_adapter_stale" for f in findings)
+
+
+def test_doctor_reports_owned_legacy_cursor_rule_for_migration(tmp_path: Path) -> None:
+    from ai_rules.adapters.cursor import OWNER
+
+    root = tmp_path / "project"
+    shutil.copytree(FIXTURE, root)
+    init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
+    legacy = root / ".cursor" / "rules" / "engineering.mdc"
+    legacy.write_text(f"{OWNER}\nlegacy\n", encoding="utf-8")
+
+    findings = doctor_project(root)
+
+    assert any(
+        f.code == "cursor_adapter_stale" and "Legacy airules Cursor adapter" in f.message
+        for f in findings
+    )
 
 
 def test_doctor_validates_claude_native_rules(tmp_path: Path) -> None:

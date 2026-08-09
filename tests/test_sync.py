@@ -7,6 +7,7 @@ import ai_rules.profiles as profiles_module
 import ai_rules.sync as sync_module
 from ai_rules.errors import ConfigurationError
 from ai_rules.manifest import load_manifest
+from ai_rules.project_instructions import PROJECT_INCOMPLETE_MARKER
 from ai_rules.sync import add_selection, init_project, sync_project
 
 FIXTURE = Path(__file__).parent / "fixtures" / "projects" / "fastapi"
@@ -35,6 +36,8 @@ def test_init_detects_fastapi_and_only_creates_airules_files(tmp_path: Path) -> 
         root / ".github" / "copilot-instructions.md",
     ):
         assert path.exists(), path
+    project_text = (root / ".ai-rules" / "project.md").read_text(encoding="utf-8")
+    assert PROJECT_INCOMPLETE_MARKER in project_text
     assert (root / "pyproject.toml").read_bytes() == original_pyproject
 
 
@@ -202,7 +205,9 @@ def test_cursor_init_generates_native_rules_and_no_legacy_adapter(tmp_path: Path
     assert (rules_dir / "airules-000-core.mdc").exists()
     assert (rules_dir / "airules-999-project.mdc").exists()
     assert not (rules_dir / "engineering.mdc").exists()
-    joined = "\n".join(path.read_text(encoding="utf-8") for path in rules_dir.glob("airules-*.mdc"))
+    joined = "\n".join(
+        path.read_text(encoding="utf-8") for path in rules_dir.glob("airules-*.mdc")
+    )
     assert "../../" not in joined
     assert "# FastAPI" in joined
 
@@ -242,13 +247,13 @@ def test_copilot_init_generates_repository_and_modular_instructions(tmp_path: Pa
 
 
 def test_cursor_sync_removes_only_owned_legacy_and_stale_rules(tmp_path: Path) -> None:
-    from ai_rules.adapters.cursor import OWNER, render_cursor
+    from ai_rules.adapters.cursor import OWNER
 
     root = copy_fixture(tmp_path)
     init_project(root, profile="fastapi-backend", dry_run=False, ides=("cursor",))
     rules_dir = root / ".cursor" / "rules"
     legacy = rules_dir / "engineering.mdc"
-    legacy.write_text(render_cursor(None), encoding="utf-8")
+    legacy.write_text(f"{OWNER}\nlegacy\n", encoding="utf-8")
     stale = rules_dir / "airules-stale.mdc"
     stale.write_text(f"{OWNER}\nstale\n", encoding="utf-8")
     foreign = rules_dir / "airules-user.mdc"

@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 
 from ai_rules.cli import app
 from ai_rules.manifest import load_manifest
+from ai_rules.project_instructions import PROJECT_INCOMPLETE_MARKER
 
 FIXTURE = Path(__file__).parent / "fixtures" / "projects" / "fastapi"
 runner = CliRunner()
@@ -53,6 +54,22 @@ def test_uninstall_confirmed_preserves_project_rules(tmp_path: Path, monkeypatch
     assert project_rules.read_text(encoding="utf-8") == "keep\n"
 
 
+def test_noninteractive_init_prints_ai_project_onboarding(tmp_path: Path, monkeypatch) -> None:
+    root = copy_fixture(tmp_path)
+    monkeypatch.chdir(root)
+
+    result = runner.invoke(
+        app, ["init", "--profile", "fastapi-backend", "--ide", "cursor"]
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Project-specific instructions still need your input" in result.stdout
+    assert "Suggested prompt" in result.stdout
+    assert "Ask me focused questions" in result.stdout
+    project_rules = root / ".ai-rules" / "project.md"
+    assert PROJECT_INCOMPLETE_MARKER in project_rules.read_text(encoding="utf-8")
+
+
 def test_interactive_init_builds_selective_custom_manifest(tmp_path: Path, monkeypatch) -> None:
     root = copy_fixture(tmp_path)
     monkeypatch.chdir(root)
@@ -70,6 +87,7 @@ def test_interactive_init_builds_selective_custom_manifest(tmp_path: Path, monke
     assert manifest.backend == {"fastapi": True}
     assert manifest.infrastructure == {"docker": True, "compose": True}
     assert manifest.data == {}
+    assert "Project-specific instructions still need your input" in result.stdout
 
 
 def test_reconfigure_warns_then_replaces_selection_after_second_confirmation(
@@ -98,5 +116,6 @@ def test_reconfigure_warns_then_replaces_selection_after_second_confirmation(
     assert manifest.backend == {}
     assert manifest.frontend == {"nextjs": True}
     assert project_rules.read_text(encoding="utf-8") == "keep me\n"
+    assert "Project-specific instructions still need your input" not in result.stdout
     assert not (root / "AGENTS.md").exists()
     assert (root / ".cursor" / "rules" / "airules-000-core.mdc").exists()

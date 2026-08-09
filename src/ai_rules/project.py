@@ -41,7 +41,7 @@ class ProjectPaths:
         return self.root / "GEMINI.md"
 
     @property
-    def cursor(self) -> Path:
+    def legacy_cursor_rule(self) -> Path:
         return self.root / ".cursor" / "rules" / "engineering.mdc"
 
     @property

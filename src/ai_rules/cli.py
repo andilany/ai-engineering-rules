@@ -14,6 +14,7 @@ from ai_rules.errors import AirulesError, ConfigurationError
 from ai_rules.explain import explain_project
 from ai_rules.lifecycle import configure_project, detected_manifest, uninstall_project
 from ai_rules.project import ProjectPaths, find_project_root
+from ai_rules.project_instructions import PROJECT_ONBOARDING_PROMPT
 from ai_rules.sync import add_selection, init_project, sync_project
 from ai_rules.wizard import render_selection_summary, run_wizard
 
@@ -25,7 +26,7 @@ def main() -> None:
     """Manage reusable AI engineering rules."""
 
 
-def _print_result(result) -> None:
+def _print_result(result):
     for write in result.writes:
         state = "change" if write.changed else "unchanged"
         typer.echo(f"{state}: {write.path}")
@@ -34,15 +35,16 @@ def _print_result(result) -> None:
         typer.echo(f"{state}: {delete.path}")
     for warning in getattr(result, "warnings", ()):
         typer.echo(f"WARN: {warning}", err=True)
+    return result
 
 
-def _run(action) -> None:
+def _run(action):
     try:
         result = action()
     except AirulesError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
-    _print_result(result)
+    return _print_result(result)
 
 
 def _print_preview(result) -> bool:
@@ -89,6 +91,16 @@ def _use_interactive_init(
     return _interactive_terminal()
 
 
+def _print_project_onboarding() -> None:
+    typer.echo("\nProject-specific instructions still need your input.")
+    typer.echo(
+        "Open your preferred AI coding agent in this repository and give it the prompt below. "
+        "The agent should inspect the project, ask you questions, and only write confirmed facts."
+    )
+    typer.echo("\nSuggested prompt:\n")
+    typer.echo(PROJECT_ONBOARDING_PROMPT, nl=False)
+
+
 @app.command()
 def version() -> None:
     typer.echo(f"airules {__version__}")
@@ -109,7 +121,9 @@ def init_command(
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     root = Path.cwd().resolve()
+    paths = ProjectPaths(root)
     selected_ides = tuple(ide) if ide else None
+    had_project_rules = paths.project_rules.exists()
 
     if not _use_interactive_init(profile=profile, ide=ide, interactive=interactive):
         _run(
@@ -120,8 +134,9 @@ def init_command(
                 ides=selected_ides,
             )
         )
+        if not dry_run and not had_project_rules and paths.project_rules.exists():
+            _print_project_onboarding()
         return
-    paths = ProjectPaths(root)
     if paths.manifest.exists():
         typer.echo("Error: Project is already initialized; run `airules reconfigure`.", err=True)
         raise typer.Exit(code=1)
@@ -136,6 +151,8 @@ def init_command(
     if not dry_run and not _confirm("Apply this configuration?", yes=yes):
         return
     _run(lambda: configure_project(root, manifest, dry_run=dry_run, replace_existing=False))
+    if not dry_run and not had_project_rules and paths.project_rules.exists():
+        _print_project_onboarding()
 
 
 @app.command()
@@ -157,6 +174,7 @@ def reconfigure(
     if not paths.manifest.exists():
         typer.echo("Error: Project is not initialized; run `airules init`.", err=True)
         raise typer.Exit(code=1)
+    had_project_rules = paths.project_rules.exists()
     preview = uninstall_project(root, purge=False, dry_run=True)
     typer.echo("⚠ Current airules configuration will be replaced.")
     typer.echo("The following managed data will be removed or rewritten:")
@@ -186,6 +204,8 @@ def reconfigure(
             typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(code=1) from exc
     _run(lambda: configure_project(root, manifest, dry_run=dry_run, replace_existing=True))
+    if not dry_run and not had_project_rules and paths.project_rules.exists():
+        _print_project_onboarding()
 
 
 @app.command()
@@ -289,5 +309,3 @@ def bootstrap(
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     _print_result(result)
-    if result.cursor_note:
-        typer.echo(result.cursor_note)

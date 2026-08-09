@@ -2,8 +2,17 @@
 
 ## [Unreleased]
 
-- Refreshed the Russian and English README files to match the current interactive CLI, lifecycle commands, native adapter layout, and Cursor Project Rules workflow.
-- Documented `.cursor/rules/airules-*.mdc` as the recommended Cursor integration path and marked `~/.ai-rules/cursor-user-rules.txt` as a legacy bootstrap compatibility artifact rather than the project rules location.
+- No unreleased changes yet.
+
+## [0.3.2] — 2026-08-09
+
+- Added guided project-specific onboarding: new `.ai-rules/project.md` files start with an explicit incomplete marker and a structured template for project purpose, architecture, workflow, verification, business, operational, and approval constraints.
+- `airules init` now prints a ready-to-use prompt for the user's own AI coding agent so repository-specific instructions are completed collaboratively instead of being left as an empty template.
+- `airules doctor` now reports `project_rules_incomplete` until the onboarding marker is removed after the user confirms the project instructions.
+- Removed the obsolete Cursor global bootstrap helper and `~/.ai-rules/cursor-user-rules.txt`; Cursor is now project-only through `.cursor/rules/airules-*.mdc`, and explicit `bootstrap --ide cursor` points users to `airules init --ide cursor`.
+- Removed the obsolete legacy Cursor renderer while retaining safe cleanup of old airules-owned `.cursor/rules/engineering.mdc` files during upgrade/sync.
+- Centralized the project instructions template and onboarding status logic so sync and doctor use one contract.
+- Shortened the Russian and English README files and moved detailed usage, configuration, project onboarding, CLI, and agent integration guidance into paired `docs/ru/` and `docs/en/` documentation.
 
 ## [0.3.1] — 2026-08-08
 

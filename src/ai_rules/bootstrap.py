@@ -6,7 +6,7 @@ from pathlib import Path
 from ai_rules.adapters.claude import OWNER as CLAUDE_OWNER
 from ai_rules.errors import ConfigurationError
 from ai_rules.filesystem import WriteScope, apply_writes, plan_write
-from ai_rules.ides import normalize_ides
+from ai_rules.ides import SUPPORTED_IDES, normalize_ides
 from ai_rules.managed_blocks import upsert_managed_block
 from ai_rules.models import PlannedWrite, RuleSeverity
 from ai_rules.rules import load_rules
@@ -22,6 +22,8 @@ GLOBAL_CORE_MODULES = (
     "quality.anti-cheating",
 )
 
+BOOTSTRAP_IDES = tuple(ide for ide in SUPPORTED_IDES if ide != "cursor")
+
 _ORDER = (
     RuleSeverity.REQUIRED,
     RuleSeverity.USER_DECISION,
@@ -34,7 +36,6 @@ _ORDER = (
 @dataclass(frozen=True, slots=True)
 class BootstrapResult:
     writes: tuple[PlannedWrite, ...]
-    cursor_note: str
 
 
 def _read(path: Path) -> str:
@@ -68,6 +69,18 @@ def _render_core() -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _selected_bootstrap_ides(ides: tuple[str, ...] | None) -> tuple[str, ...]:
+    if ides is None:
+        return BOOTSTRAP_IDES
+    selected = normalize_ides(ides, default_all=False)
+    if "cursor" in selected:
+        raise ConfigurationError(
+            "Cursor has no airules-managed global bootstrap target. "
+            "Use project rules with `airules init --ide cursor` instead."
+        )
+    return selected
+
+
 def bootstrap(
     home: Path,
     *,
@@ -82,17 +95,10 @@ def bootstrap(
     codex = codex_dir / "AGENTS.md"
     claude = home / ".claude" / "rules" / "airules" / "000-core.md"
     gemini = home / ".gemini" / "GEMINI.md"
-    cursor = home / ".ai-rules" / "cursor-user-rules.txt"
     copilot = copilot_dir / "copilot-instructions.md"
 
     core = _render_core()
-    cursor_text = (
-        "Paste the content below into Cursor Settings > Rules > User Rules.\n"
-        "Cursor User Rules are managed by Cursor settings; airules does not modify them "
-        "automatically.\n\n"
-        + core
-    )
-    selected_ides = normalize_ides(ides, default_all=True)
+    selected_ides = _selected_bootstrap_ides(ides)
     writes: list[PlannedWrite] = []
     if "codex" in selected_ides:
         writes.append(plan_write(codex, upsert_managed_block(_read(codex), core)))
@@ -105,19 +111,12 @@ def bootstrap(
         writes.append(plan_write(claude, f"{CLAUDE_OWNER}\n{core}"))
     if "gemini" in selected_ides:
         writes.append(plan_write(gemini, upsert_managed_block(_read(gemini), core)))
-    if "cursor" in selected_ides:
-        writes.append(plan_write(cursor, cursor_text))
     if "copilot" in selected_ides:
         writes.append(plan_write(copilot, upsert_managed_block(_read(copilot), core)))
     scope = WriteScope(
         root=home,
-        allowed_exact=frozenset({codex, claude, gemini, cursor, copilot}),
+        allowed_exact=frozenset({codex, claude, gemini, copilot}),
         allowed_prefixes=(codex_dir, copilot_dir, home / ".claude" / "rules" / "airules"),
     )
     applied = apply_writes(tuple(writes), dry_run=dry_run, scope=scope)
-    cursor_note = (
-        "Cursor: paste ~/.ai-rules/cursor-user-rules.txt into Settings > Rules > User Rules."
-        if "cursor" in selected_ides
-        else ""
-    )
-    return BootstrapResult(writes=applied, cursor_note=cursor_note)
+    return BootstrapResult(writes=applied)
