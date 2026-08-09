@@ -26,7 +26,7 @@ def main() -> None:
     """Manage reusable AI engineering rules."""
 
 
-def _print_result(result):
+def _print_result(result) -> None:
     for write in result.writes:
         state = "change" if write.changed else "unchanged"
         typer.echo(f"{state}: {write.path}")
@@ -35,16 +35,15 @@ def _print_result(result):
         typer.echo(f"{state}: {delete.path}")
     for warning in getattr(result, "warnings", ()):
         typer.echo(f"WARN: {warning}", err=True)
-    return result
 
 
-def _run(action):
+def _run(action) -> None:
     try:
         result = action()
     except AirulesError as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
-    return _print_result(result)
+    _print_result(result)
 
 
 def _print_preview(result) -> bool:
